@@ -265,12 +265,11 @@ function Aurora:CreateMainWindow()
     corner.CornerRadius = UDim.new(0, 20)
     corner.Parent = self.MainWindow
     
-    -- Background Pattern
     if self.Config.BackgroundPattern ~= "None" then
         self:CreateBackgroundPattern(self.MainWindow)
     end
     
-    -- Animated background particles
+       -- Animated background particles
     if self.Config.WindowEffects.Particles then
         self:CreateParticleEffect(self.MainWindow)
     end

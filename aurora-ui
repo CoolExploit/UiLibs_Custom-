@@ -1929,149 +1929,6 @@ function Aurora:CreateSection(options)
     return section
 end
 
--- ENHANCED NOTIFICATION SYSTEM
-function Aurora:CreateNotify(options)
-    local notify = Instance.new("Frame")
-    notify.Name = "Notify"
-    notify.Size = UDim2.new(0, 350, 0, 90)
-    notify.Position = UDim2.new(1, 400, 1, -110)
-    notify.BackgroundColor3 = self.Config.Theme.Secondary
-    notify.BorderSizePixel = 0
-    notify.Parent = self.ScreenGui
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
-    corner.Parent = notify
-    
-    -- Multi-layer glow
-    for i = 1, 2 do
-        local glow = Instance.new("ImageLabel")
-        glow.Name = "Glow" .. i
-        glow.Size = UDim2.new(1, 20 + (i * 5), 1, 20 + (i * 5))
-        glow.Position = UDim2.new(0, -10 - (i * 2.5), 0, -10 - (i * 2.5))
-        glow.BackgroundTransparency = 1
-        glow.Image = "rbxassetid://8992230675"
-        glow.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
-                         or options.type == "warning" and self.Config.Theme.Warning 
-                         or options.type == "error" and self.Config.Theme.Error 
-                         or options.type == "info" and self.Config.Theme.Info
-                         or self.Config.Theme.Accent
-        glow.ImageTransparency = 0.9 - (i * 0.1)
-        glow.ScaleType = Enum.ScaleType.Slice
-        glow.SliceCenter = Rect.new(23, 23, 277, 277)
-        glow.Parent = notify
-        glow.ZIndex = -1
-    end
-    
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "Icon"
-    icon.Size = UDim2.new(0, 28, 0, 28)
-    icon.Position = UDim2.new(0, 20, 0, 20)
-    icon.BackgroundTransparency = 1
-    icon.Image = options.type == "success" and "rbxassetid://10734994956" 
-               or options.type == "warning" and "rbxassetid://10734996278" 
-               or options.type == "error" and "rbxassetid://10734994956" 
-               or options.type == "info" and "rbxassetid://10734996820"
-               or "rbxassetid://10734996820"
-    icon.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
-                     or options.type == "warning" and self.Config.Theme.Warning 
-                     or options.type == "error" and self.Config.Theme.Error 
-                     or options.type == "info" and self.Config.Theme.Info
-                     or self.Config.Theme.Accent
-    icon.Parent = notify
-    
-    -- Icon animation
-    pcall(function()
-        TweenService:Create(icon, TweenInfo.Elastic, {
-            Rotation = 360,
-            Size = UDim2.new(0, 32, 0, 32)
-        }):Play()
-        wait(0.3)
-        TweenService:Create(icon, TweenInfo.Smooth, {
-            Rotation = 0,
-            Size = UDim2.new(0, 28, 0, 28)
-        }):Play()
-    end)
-    
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, -70, 0, 24)
-    title.Position = UDim2.new(0, 65, 0, 18)
-    title.BackgroundTransparency = 1
-    title.Text = options.title or 
-                (options.type == "success" and "Success" or
-                 options.type == "warning" and "Warning" or
-                 options.type == "error" and "Error" or
-                 options.type == "info" and "Information" or
-                 "Notification")
-    title.TextColor3 = self.Config.Theme.Text
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 16
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = notify
-    
-    local description = Instance.new("TextLabel")
-    description.Name = "Description"
-    description.Size = UDim2.new(1, -40, 1, -50)
-    description.Position = UDim2.new(0, 20, 0, 50)
-    description.BackgroundTransparency = 1
-    description.Text = options.description or options.text or "This is a notification"
-    description.TextColor3 = self.Config.Theme.TextSecondary
-    description.Font = Enum.Font.Gotham
-    description.TextSize = 13
-    description.TextXAlignment = Enum.TextXAlignment.Left
-    description.TextYAlignment = Enum.TextYAlignment.Top
-    description.TextWrapped = true
-    description.Parent = notify
-    
-    -- Progress bar for auto-close
-    local progressBar = Instance.new("Frame")
-    progressBar.Name = "ProgressBar"
-    progressBar.Size = UDim2.new(1, 0, 0, 3)
-    progressBar.Position = UDim2.new(0, 0, 1, 0)
-    progressBar.BackgroundColor3 = options.type == "success" and self.Config.Theme.Success 
-                                 or options.type == "warning" and self.Config.Theme.Warning 
-                                 or options.type == "error" and self.Config.Theme.Error 
-                                 or options.type == "info" and self.Config.Theme.Info
-                                 or self.Config.Theme.Accent
-    progressBar.BorderSizePixel = 0
-    progressBar.Parent = notify
-    
-    local progressCorner = Instance.new("UICorner")
-    progressCorner.CornerRadius = UDim.new(0, 2)
-    progressCorner.Parent = progressBar
-    
-    -- Slide in animation with bounce
-    pcall(function()
-        TweenService:Create(notify, TweenInfo.Elastic, {
-            Position = UDim2.new(1, -370, 1, -110)
-        }):Play()
-    end)
-    
-    -- Progress bar animation
-    pcall(function()
-        TweenService:Create(progressBar, TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 0, 0, 3)
-        }):Play()
-    end)
-    
-    -- Auto-remove after 5 seconds with slide out
-    task.delay(5, function()
-        if notify and notify.Parent then
-            pcall(function()
-                TweenService:Create(notify, TweenInfo.Smooth, {
-                    Position = UDim2.new(1, 400, 1, -110)
-                }):Play()
-            end)
-            
-            task.wait(0.3)
-            pcall(function() notify:Destroy() end)
-        end
-    end)
-    
-    return notify
-end
-
 -- WINDOW MANAGEMENT
 function Aurora:Minimize()
     self.Minimized = not self.Minimized
@@ -2155,7 +2012,7 @@ function Aurora:SetupInput()
     end)
 end
 
--- ======== PUT DESTROY METHODS HERE ========
+-- DESTROY METHODS
 function Aurora:Destroy()
     -- Create confirmation dialog
     local confirmFrame = Instance.new("Frame")
@@ -2396,8 +2253,5 @@ function Aurora:ActuallyDestroy()
     self.OpenButton = nil
     self.Tabs = {}
 end
--- ======== END OF DESTROY METHODS ========
-
-return Aurora
 
 return Aurora

@@ -1,4 +1,4 @@
--- Aurora UI - Premium Animated Library
+-- Aurora UI - Premium Animated Library with Customization
 local Aurora = {}
 Aurora.__index = Aurora
 
@@ -27,18 +27,24 @@ function Aurora:CreateMain(options)
             Accent = Color3.fromRGB(138, 43, 226),
             Text = Color3.fromRGB(240, 240, 240),
             TextSecondary = Color3.fromRGB(180, 180, 200),
-            LightAccent = Color3.fromRGB(158, 73, 246)
+            LightAccent = Color3.fromRGB(158, 73, 246),
+            Success = Color3.fromRGB(46, 204, 113),
+            Warning = Color3.fromRGB(241, 196, 15),
+            Error = Color3.fromRGB(231, 76, 60)
+        },
+        BackgroundPattern = options.BackgroundPattern or "Hexagons", -- "Hexagons", "Circles", "Lines", "Grid", "None"
+        WindowEffects = options.WindowEffects or {
+            Blur = true,
+            Particles = true,
+            Glow = true
         },
         ToggleKey = options.ToggleKey or Enum.KeyCode.RightShift,
-        OpenSound = options.OpenSound or "rbxassetid://9046389332",
-        CloseSound = options.CloseSound or "rbxassetid://9046389332"
     }
     
     self.Elements = {}
     self.Visible = false
+    self.Minimized = false
     self.Dragging = false
-    self.DragStart = nil
-    self.DragStartPosition = nil
     
     self:CreateUI()
     self:SetupInput()
@@ -69,7 +75,7 @@ function Aurora:CreateOpenButton()
     button.Size = UDim2.new(0, 60, 0, 60)
     button.Position = UDim2.new(0, 20, 0.5, -30)
     button.BackgroundColor3 = self.Config.Theme.Accent
-    button.Image = "rbxassetid://10734996820" -- Modern icon
+    button.Image = "rbxassetid://10734996820"
     button.ScaleType = Enum.ScaleType.Fit
     button.Visible = true
     
@@ -77,6 +83,7 @@ function Aurora:CreateOpenButton()
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = button
     
+    -- Glow effect
     local glow = Instance.new("ImageLabel")
     glow.Name = "Glow"
     glow.Size = UDim2.new(1.2, 0, 1.2, 0)
@@ -100,39 +107,48 @@ function Aurora:CreateOpenButton()
 end
 
 function Aurora:CreatePulseAnimation(element)
-    local pulse = RunService.Heartbeat:Connect(function()
-        local sin = math.sin(tick() * 3)
-        element.ImageTransparency = 0.7 + math.abs(sin) * 0.2
-    end)
+    coroutine.wrap(function()
+        while element and element.Parent do
+            local sin = math.sin(tick() * 3)
+            element.ImageTransparency = 0.7 + math.abs(sin) * 0.2
+            RunService.Heartbeat:Wait()
+        end
+    end)()
 end
 
 function Aurora:CreateMainWindow()
     local window = Instance.new("Frame")
     window.Name = "MainWindow"
-    window.Size = UDim2.new(0, 450, 0, 500)
-    window.Position = UDim2.new(0.5, -225, 0.5, -250)
+    window.Size = UDim2.new(0, 500, 0, 550)
+    window.Position = UDim2.new(0.5, -250, 0.5, -275)
     window.BackgroundColor3 = self.Config.Theme.Main
     window.Visible = false
     window.ClipsDescendants = true
     
-    -- Modern corner radius
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 20)
     corner.Parent = window
     
-    -- Subtle shadow
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0, -10, 0, -10)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://5554237733"
-    shadow.ImageColor3 = Color3.new(0, 0, 0)
-    shadow.ImageTransparency = 0.8
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(23, 23, 277, 277)
-    shadow.Parent = window
-    shadow.ZIndex = -1
+    -- Background Pattern
+    if self.Config.BackgroundPattern ~= "None" then
+        self:CreateBackgroundPattern(window)
+    end
+    
+    -- Glow Effect
+    if self.Config.WindowEffects.Glow then
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow"
+        glow.Size = UDim2.new(1, 40, 1, 40)
+        glow.Position = UDim2.new(0, -20, 0, -20)
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://8992230675"
+        glow.ImageColor3 = self.Config.Theme.Accent
+        glow.ImageTransparency = 0.8
+        glow.ScaleType = Enum.ScaleType.Slice
+        glow.SliceCenter = Rect.new(23, 23, 277, 277)
+        glow.Parent = window
+        glow.ZIndex = -1
+    end
     
     -- Top Bar
     self.TopBar = self:CreateTopBar()
@@ -150,64 +166,187 @@ function Aurora:CreateMainWindow()
     return window
 end
 
+function Aurora:CreateBackgroundPattern(parent)
+    local pattern = Instance.new("Frame")
+    pattern.Name = "BackgroundPattern"
+    pattern.Size = UDim2.new(1, 0, 1, 0)
+    pattern.BackgroundTransparency = 1
+    pattern.ZIndex = 0
+    
+    if self.Config.BackgroundPattern == "Hexagons" then
+        -- Hexagon pattern
+        for i = 1, 20 do
+            for j = 1, 15 do
+                local hex = Instance.new("ImageLabel")
+                hex.Size = UDim2.new(0, 40, 0, 40)
+                hex.Position = UDim2.new(0, (i-1) * 45 + (j % 2 == 0 and 22.5 or 0), 0, (j-1) * 35)
+                hex.BackgroundTransparency = 1
+                hex.Image = "rbxassetid://10734994956" -- Hexagon icon
+                hex.ImageColor3 = self.Config.Theme.Secondary
+                hex.ImageTransparency = 0.1
+                hex.ZIndex = 0
+                hex.Parent = pattern
+            end
+        end
+    elseif self.Config.BackgroundPattern == "Circles" then
+        -- Circle pattern
+        for i = 1, 8 do
+            for j = 1, 6 do
+                local circle = Instance.new("Frame")
+                circle.Size = UDim2.new(0, 30, 0, 30)
+                circle.Position = UDim2.new(0, i * 60, 0, j * 70)
+                circle.BackgroundColor3 = self.Config.Theme.Secondary
+                circle.BackgroundTransparency = 0.9
+                circle.ZIndex = 0
+                
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(1, 0)
+                corner.Parent = circle
+                circle.Parent = pattern
+            end
+        end
+    elseif self.Config.BackgroundPattern == "Lines" then
+        -- Line pattern
+        for i = 1, 10 do
+            local line = Instance.new("Frame")
+            line.Size = UDim2.new(1, 0, 0, 1)
+            line.Position = UDim2.new(0, 0, 0, i * 50)
+            line.BackgroundColor3 = self.Config.Theme.Secondary
+            line.BackgroundTransparency = 0.8
+            line.ZIndex = 0
+            line.Parent = pattern
+        end
+    end
+    
+    pattern.Parent = parent
+end
+
 function Aurora:CreateTopBar()
     local topBar = Instance.new("Frame")
     topBar.Name = "TopBar"
-    topBar.Size = UDim2.new(1, 0, 0, 50)
+    topBar.Size = UDim2.new(1, 0, 0, 60)
     topBar.BackgroundColor3 = self.Config.Theme.Secondary
     topBar.BorderSizePixel = 0
     
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 16)
+    corner.CornerRadius = UDim.new(0, 20)
     corner.Parent = topBar
     
-    -- Title
+    -- Title with icon
+    local titleContainer = Instance.new("Frame")
+    titleContainer.Name = "TitleContainer"
+    titleContainer.Size = UDim2.new(0.5, 0, 1, 0)
+    titleContainer.Position = UDim2.new(0, 20, 0, 0)
+    titleContainer.BackgroundTransparency = 1
+    titleContainer.Parent = topBar
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 30, 0, 30)
+    icon.Position = UDim2.new(0, 0, 0.5, -15)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://10734996820"
+    icon.ImageColor3 = self.Config.Theme.Accent
+    icon.Parent = titleContainer
+    
     local title = Instance.new("TextLabel")
     title.Name = "Title"
-    title.Size = UDim2.new(0.5, 0, 1, 0)
-    title.Position = UDim2.new(0, 20, 0, 0)
+    title.Size = UDim2.new(1, -40, 1, 0)
+    title.Position = UDim2.new(0, 40, 0, 0)
     title.BackgroundTransparency = 1
     title.Text = "AURORA UI"
     title.TextColor3 = self.Config.Theme.Text
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 18
+    title.TextSize = 20
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = topBar
+    title.Parent = titleContainer
+    
+    -- Control Buttons
+    local controls = Instance.new("Frame")
+    controls.Name = "Controls"
+    controls.Size = UDim2.new(0, 80, 1, 0)
+    controls.Position = UDim2.new(1, -90, 0, 0)
+    controls.BackgroundTransparency = 1
+    controls.Parent = topBar
+    
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = controls
+    
+    -- Minimize Button
+    local minimizeBtn = self:CreateControlButton("Minimize", "rbxassetid://10734996278")
+    minimizeBtn.LayoutOrder = 1
+    minimizeBtn.Parent = controls
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        self:Minimize()
+    end)
     
     -- Close Button
-    local closeBtn = Instance.new("ImageButton")
-    closeBtn.Name = "CloseButton"
-    closeBtn.Size = UDim2.new(0, 30, 0, 30)
-    closeBtn.Position = UDim2.new(1, -40, 0.5, -15)
-    closeBtn.BackgroundColor3 = self.Config.Theme.Secondary
-    closeBtn.Image = "rbxassetid://10734994956" -- X icon
-    closeBtn.ScaleType = Enum.ScaleType.Fit
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(1, 0)
-    btnCorner.Parent = closeBtn
+    local closeBtn = self:CreateControlButton("Close", "rbxassetid://10734994956")
+    closeBtn.LayoutOrder = 2
+    closeBtn.Parent = controls
     
     closeBtn.MouseButton1Click:Connect(function()
         self:Toggle()
     end)
     
-    closeBtn.Parent = topBar
-    
     return topBar
+end
+
+function Aurora:CreateControlButton(name, icon)
+    local button = Instance.new("ImageButton")
+    button.Name = name
+    button.Size = UDim2.new(0, 30, 0, 30)
+    button.BackgroundColor3 = self.Config.Theme.Secondary
+    button.Image = icon
+    button.ImageColor3 = self.Config.Theme.Text
+    button.ScaleType = Enum.ScaleType.Fit
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    -- Hover effects
+    button.MouseEnter:Connect(function()
+        if name == "Close" then
+            TweenService:Create(button, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Error,
+                ImageColor3 = Color3.new(1, 1, 1)
+            }):Play()
+        else
+            TweenService:Create(button, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.LightAccent,
+                ImageColor3 = Color3.new(1, 1, 1)
+            }):Play()
+        end
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.Smooth, {
+            BackgroundColor3 = self.Config.Theme.Secondary,
+            ImageColor3 = self.Config.Theme.Text
+        }):Play()
+    end)
+    
+    return button
 end
 
 function Aurora:CreateTabContainer()
     local container = Instance.new("Frame")
     container.Name = "TabContainer"
-    container.Size = UDim2.new(1, -40, 0, 40)
-    container.Position = UDim2.new(0, 20, 0, 60)
+    container.Size = UDim2.new(1, -40, 0, 50)
+    container.Position = UDim2.new(0, 20, 0, 70)
     container.BackgroundTransparency = 1
     
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Horizontal
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
     layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
+    layout.Padding = UDim.new(0, 10)
     layout.Parent = container
     
     return container
@@ -216,8 +355,8 @@ end
 function Aurora:CreateContentFrame()
     local content = Instance.new("Frame")
     content.Name = "Content"
-    content.Size = UDim2.new(1, -40, 1, -120)
-    content.Position = UDim2.new(0, 20, 0, 120)
+    content.Size = UDim2.new(1, -40, 1, -140)
+    content.Position = UDim2.new(0, 20, 0, 130)
     content.BackgroundTransparency = 1
     content.ClipsDescendants = true
     
@@ -270,7 +409,7 @@ function Aurora:CreateTab(name, icon)
     -- Tab Button
     local tabButton = Instance.new("TextButton")
     tabButton.Name = name .. "Tab"
-    tabButton.Size = UDim2.new(0, 100, 1, 0)
+    tabButton.Size = UDim2.new(0, 110, 1, 0)
     tabButton.BackgroundColor3 = self.Config.Theme.Secondary
     tabButton.Text = name
     tabButton.TextColor3 = self.Config.Theme.TextSecondary
@@ -279,14 +418,14 @@ function Aurora:CreateTab(name, icon)
     tabButton.AutoButtonColor = false
     
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = tabButton
     
     -- Tab Content
     tab.Content.Size = UDim2.new(1, 0, 1, 0)
     tab.Content.BackgroundTransparency = 1
     tab.Content.BorderSizePixel = 0
-    tab.Content.ScrollBarThickness = 3
+    tab.Content.ScrollBarThickness = 4
     tab.Content.ScrollBarImageColor3 = self.Config.Theme.Accent
     tab.Content.Visible = false
     tab.Content.Parent = self.ContentFrame
@@ -294,12 +433,12 @@ function Aurora:CreateTab(name, icon)
     local layout = Instance.new("UIListLayout")
     layout.Parent = tab.Content
     layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 10)
+    layout.Padding = UDim.new(0, 12)
     
     local padding = Instance.new("UIPadding")
     padding.Parent = tab.Content
-    padding.PaddingLeft = UDim.new(0, 5)
-    padding.PaddingTop = UDim.new(0, 5)
+    padding.PaddingLeft = UDim.new(0, 8)
+    padding.PaddingTop = UDim.new(0, 8)
     
     -- Click Event
     tabButton.MouseButton1Click:Connect(function()
@@ -360,7 +499,7 @@ end
 function Aurora:CreateButton(options)
     local button = Instance.new("TextButton")
     button.Name = "Button"
-    button.Size = UDim2.new(1, -10, 0, 45)
+    button.Size = UDim2.new(1, -10, 0, 50)
     button.BackgroundColor3 = self.Config.Theme.Secondary
     button.Text = options.text or "Button"
     button.TextColor3 = self.Config.Theme.Text
@@ -370,22 +509,42 @@ function Aurora:CreateButton(options)
     button.Parent = options.parent.Content
     
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = button
+    
+    -- Gradient effect on hover
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+    })
+    gradient.Rotation = 45
+    gradient.Parent = button
     
     -- Hover Effects
     button.MouseEnter:Connect(function()
         TweenService:Create(button, TweenInfo.Smooth, {
             BackgroundColor3 = self.Config.Theme.LightAccent,
-            Size = UDim2.new(1, -5, 0, 45)
+            Size = UDim2.new(1, -5, 0, 50)
         }):Play()
+        
+        -- Animate gradient
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, self.Config.Theme.LightAccent),
+            ColorSequenceKeypoint.new(1, self.Config.Theme.Accent)
+        })
     end)
     
     button.MouseLeave:Connect(function()
         TweenService:Create(button, TweenInfo.Smooth, {
             BackgroundColor3 = self.Config.Theme.Secondary,
-            Size = UDim2.new(1, -10, 0, 45)
+            Size = UDim2.new(1, -10, 0, 50)
         }):Play()
+        
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+            ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+        })
     end)
     
     -- Click Animation
@@ -413,7 +572,7 @@ end
 function Aurora:CreateToggle(options)
     local toggleFrame = Instance.new("Frame")
     toggleFrame.Name = "Toggle"
-    toggleFrame.Size = UDim2.new(1, -10, 0, 40)
+    toggleFrame.Size = UDim2.new(1, -10, 0, 45)
     toggleFrame.BackgroundTransparency = 1
     toggleFrame.Parent = options.parent.Content
     
@@ -430,8 +589,8 @@ function Aurora:CreateToggle(options)
     
     local toggle = Instance.new("Frame")
     toggle.Name = "ToggleSwitch"
-    toggle.Size = UDim2.new(0, 50, 0, 25)
-    toggle.Position = UDim2.new(1, -50, 0.5, -12.5)
+    toggle.Size = UDim2.new(0, 60, 0, 30)
+    toggle.Position = UDim2.new(1, -60, 0.5, -15)
     toggle.BackgroundColor3 = self.Config.Theme.Secondary
     toggle.Parent = toggleFrame
     
@@ -441,8 +600,8 @@ function Aurora:CreateToggle(options)
     
     local toggleDot = Instance.new("Frame")
     toggleDot.Name = "ToggleDot"
-    toggleDot.Size = UDim2.new(0, 19, 0, 19)
-    toggleDot.Position = UDim2.new(0, 3, 0.5, -9.5)
+    toggleDot.Size = UDim2.new(0, 22, 0, 22)
+    toggleDot.Position = UDim2.new(0, 4, 0.5, -11)
     toggleDot.BackgroundColor3 = self.Config.Theme.Text
     toggleDot.Parent = toggle
     
@@ -458,14 +617,14 @@ function Aurora:CreateToggle(options)
                 BackgroundColor3 = self.Config.Theme.Accent
             }):Play()
             TweenService:Create(toggleDot, TweenInfo.Elastic, {
-                Position = UDim2.new(0, 28, 0.5, -9.5)
+                Position = UDim2.new(0, 34, 0.5, -11)
             }):Play()
         else
             TweenService:Create(toggle, TweenInfo.Smooth, {
                 BackgroundColor3 = self.Config.Theme.Secondary
             }):Play()
             TweenService:Create(toggleDot, TweenInfo.Elastic, {
-                Position = UDim2.new(0, 3, 0.5, -9.5)
+                Position = UDim2.new(0, 4, 0.5, -11)
             }):Play()
         end
     end
@@ -488,18 +647,18 @@ end
 function Aurora:CreateSection(options)
     local section = Instance.new("Frame")
     section.Name = "Section"
-    section.Size = UDim2.new(1, -10, 0, 50)
+    section.Size = UDim2.new(1, -10, 0, 60)
     section.BackgroundTransparency = 1
     section.Parent = options.parent.Content
     
     local title = Instance.new("TextLabel")
     title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 1, 0)
+    title.Size = UDim2.new(1, 0, 0.5, 0)
     title.BackgroundTransparency = 1
     title.Text = options.text or "Section"
     title.TextColor3 = self.Config.Theme.Text
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 16
+    title.TextSize = 18
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = section
     
@@ -511,20 +670,56 @@ function Aurora:CreateSection(options)
     line.BorderSizePixel = 0
     line.Parent = section
     
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Accent),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.LightAccent)
+    })
+    gradient.Parent = line
+    
     return section
+end
+
+function Aurora:Minimize()
+    self.Minimized = not self.Minimized
+    
+    if self.Minimized then
+        -- Minimize to top bar only
+        TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
+            Size = UDim2.new(0, 500, 0, 60)
+        }):Play()
+        
+        -- Hide content
+        self.TabContainer.Visible = false
+        self.ContentFrame.Visible = false
+    else
+        -- Restore to full size
+        TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
+            Size = UDim2.new(0, 500, 0, 550)
+        }):Play()
+        
+        -- Show content
+        self.TabContainer.Visible = true
+        self.ContentFrame.Visible = true
+    end
 end
 
 function Aurora:Toggle()
     self.Visible = not self.Visible
     
     if self.Visible then
+        -- Reset minimized state when opening
+        self.Minimized = false
+        self.TabContainer.Visible = true
+        self.ContentFrame.Visible = true
+        
         -- Show with animation
         self.MainWindow.Visible = true
         self.OpenButton.Visible = false
         
         TweenService:Create(self.MainWindow, TweenInfo.Elastic, {
-            Size = UDim2.new(0, 450, 0, 500),
-            Position = UDim2.new(0.5, -225, 0.5, -250)
+            Size = UDim2.new(0, 500, 0, 550),
+            Position = UDim2.new(0.5, -250, 0.5, -275)
         }):Play()
     else
         -- Hide with animation

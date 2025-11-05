@@ -1,4 +1,4 @@
--- Aurora UI - Complete Premium Component Library
+-- Aurora UI - Ultra Animated Premium Library
 local Aurora = {}
 Aurora.__index = Aurora
 
@@ -14,7 +14,9 @@ local TweenInfo = {
     Smooth = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
     Bounce = TweenInfo.new(0.6, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out),
     Elastic = TweenInfo.new(0.8, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out),
-    Quick = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    Quick = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+    Back = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+    Circular = TweenInfo.new(0.5, Enum.EasingStyle.Circular, Enum.EasingDirection.Out)
 }
 
 function Aurora:CreateMain(options)
@@ -54,19 +56,857 @@ function Aurora:CreateMain(options)
     return self
 end
 
--- [Previous UI creation code remains the same...]
--- Let me add the NEW COMPONENTS:
+function Aurora:CreateUI()
+    -- Main GUI Container
+    self.ScreenGui = Instance.new("ScreenGui")
+    self.ScreenGui.Name = "AuroraUI"
+    self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    self.ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Open Button (Floating)
+    self.OpenButton = self:CreateOpenButton()
+    
+    -- Main Window (Initially Hidden)
+    self.MainWindow = self:CreateMainWindow()
+end
+
+function Aurora:CreateOpenButton()
+    local button = Instance.new("ImageButton")
+    button.Name = "OpenButton"
+    button.Size = UDim2.new(0, 70, 0, 70)
+    button.Position = UDim2.new(0, 30, 0.5, -35)
+    button.BackgroundColor3 = self.Config.Theme.Accent
+    button.Image = "rbxassetid://10734996820"
+    button.ScaleType = Enum.ScaleType.Fit
+    button.Visible = true
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = button
+    
+    -- Multiple glow effects
+    for i = 1, 3 do
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow" .. i
+        glow.Size = UDim2.new(1 + (i * 0.2), 0, 1 + (i * 0.2), 0)
+        glow.Position = UDim2.new(-(i * 0.1), 0, -(i * 0.1), 0)
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://10734996820"
+        glow.ImageColor3 = self.Config.Theme.Accent
+        glow.ImageTransparency = 0.8 - (i * 0.2)
+        glow.ScaleType = Enum.ScaleType.Fit
+        glow.Parent = button
+    end
+    
+    -- Floating animation
+    coroutine.wrap(function()
+        while button and button.Parent do
+            TweenService:Create(button, TweenInfo.Smooth, {
+                Position = UDim2.new(0, 30, 0.5, -40)
+            }):Play()
+            wait(1.5)
+            TweenService:Create(button, TweenInfo.Smooth, {
+                Position = UDim2.new(0, 30, 0.5, -30)
+            }):Play()
+            wait(1.5)
+        end
+    end)()
+    
+    -- Pulse animation for glows
+    coroutine.wrap(function()
+        while button and button.Parent do
+            for i = 1, 3 do
+                local glow = button:FindFirstChild("Glow" .. i)
+                if glow then
+                    TweenService:Create(glow, TweenInfo.Smooth, {
+                        ImageTransparency = 0.3 - (i * 0.1)
+                    }):Play()
+                end
+            end
+            wait(1)
+            for i = 1, 3 do
+                local glow = button:FindFirstChild("Glow" .. i)
+                if glow then
+                    TweenService:Create(glow, TweenInfo.Smooth, {
+                        ImageTransparency = 0.8 - (i * 0.2)
+                    }):Play()
+                end
+            end
+            wait(1)
+        end
+    end)()
+    
+    button.MouseButton1Click:Connect(function()
+        self:Toggle()
+    end)
+    
+    button.Parent = self.ScreenGui
+    return button
+end
+
+function Aurora:CreateMainWindow()
+    local window = Instance.new("Frame")
+    window.Name = "MainWindow"
+    window.Size = UDim2.new(0, 500, 0, 0) -- Start at 0 height
+    window.Position = UDim2.new(0.5, -250, 0.5, 0)
+    window.BackgroundColor3 = self.Config.Theme.Main
+    window.Visible = false
+    window.ClipsDescendants = true
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 20)
+    corner.Parent = window
+    
+    -- Animated background particles
+    if self.Config.WindowEffects.Particles then
+        self:CreateParticleEffect(window)
+    end
+    
+    -- Multi-layer glow
+    for i = 1, 2 do
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "GlowLayer" .. i
+        glow.Size = UDim2.new(1, 40 + (i * 10), 1, 40 + (i * 10))
+        glow.Position = UDim2.new(0, -20 - (i * 5), 0, -20 - (i * 5))
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://8992230675"
+        glow.ImageColor3 = self.Config.Theme.Accent
+        glow.ImageTransparency = 0.9 - (i * 0.1)
+        glow.ScaleType = Enum.ScaleType.Slice
+        glow.SliceCenter = Rect.new(23, 23, 277, 277)
+        glow.Parent = window
+        glow.ZIndex = -1
+        
+        -- Pulsing glow animation
+        coroutine.wrap(function()
+            while glow and glow.Parent do
+                TweenService:Create(glow, TweenInfo.Smooth, {
+                    ImageTransparency = 0.7 - (i * 0.1)
+                }):Play()
+                wait(2)
+                TweenService:Create(glow, TweenInfo.Smooth, {
+                    ImageTransparency = 0.9 - (i * 0.1)
+                }):Play()
+                wait(2)
+            end
+        end)()
+    end
+    
+    -- Top Bar
+    self.TopBar = self:CreateTopBar()
+    self.TopBar.Parent = window
+    
+    -- Tab Buttons
+    self.TabContainer = self:CreateTabContainer()
+    self.TabContainer.Parent = window
+    
+    -- Content Area
+    self.ContentFrame = self:CreateContentFrame()
+    self.ContentFrame.Parent = window
+    
+    window.Parent = self.ScreenGui
+    return window
+end
+
+function Aurora:CreateParticleEffect(parent)
+    local particleContainer = Instance.new("Frame")
+    particleContainer.Name = "Particles"
+    particleContainer.Size = UDim2.new(1, 0, 1, 0)
+    particleContainer.BackgroundTransparency = 1
+    particleContainer.ZIndex = 0
+    particleContainer.Parent = parent
+    
+    -- Create multiple particles
+    for i = 1, 15 do
+        local particle = Instance.new("Frame")
+        particle.Name = "Particle" .. i
+        particle.Size = UDim2.new(0, math.random(4, 8), 0, math.random(4, 8))
+        particle.BackgroundColor3 = self.Config.Theme.Accent
+        particle.BackgroundTransparency = 0.7
+        particle.BorderSizePixel = 0
+        particle.ZIndex = 0
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = particle
+        
+        -- Random position
+        particle.Position = UDim2.new(0, math.random(0, 500), 0, math.random(0, 550))
+        particle.Parent = particleContainer
+        
+        -- Floating animation
+        coroutine.wrap(function()
+            while particle and particle.Parent do
+                local targetX = math.random(0, 500)
+                local targetY = math.random(0, 550)
+                local duration = math.random(3, 8)
+                
+                TweenService:Create(particle, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                    Position = UDim2.new(0, targetX, 0, targetY),
+                    BackgroundTransparency = math.random(5, 8) / 10
+                }):Play()
+                
+                wait(duration)
+            end
+        end)()
+    end
+end
+
+function Aurora:CreateTopBar()
+    local topBar = Instance.new("Frame")
+    topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, 60)
+    topBar.BackgroundColor3 = self.Config.Theme.Secondary
+    topBar.BorderSizePixel = 0
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 20)
+    corner.Parent = topBar
+    
+    -- Animated gradient background
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.LightAccent)
+    })
+    gradient.Rotation = 45
+    gradient.Parent = topBar
+    
+    -- Animate gradient
+    coroutine.wrap(function()
+        while topBar and topBar.Parent do
+            TweenService:Create(gradient, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Rotation = 135
+            }):Play()
+            wait(3)
+            TweenService:Create(gradient, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Rotation = 45
+            }):Play()
+            wait(3)
+        end
+    end)()
+    
+    -- Title with icon
+    local titleContainer = Instance.new("Frame")
+    titleContainer.Name = "TitleContainer"
+    titleContainer.Size = UDim2.new(0.5, 0, 1, 0)
+    titleContainer.Position = UDim2.new(0, 20, 0, 0)
+    titleContainer.BackgroundTransparency = 1
+    titleContainer.Parent = topBar
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 35, 0, 35)
+    icon.Position = UDim2.new(0, 0, 0.5, -17.5)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://10734996820"
+    icon.ImageColor3 = self.Config.Theme.Accent
+    icon.Parent = titleContainer
+    
+    -- Icon rotation animation
+    coroutine.wrap(function()
+        while icon and icon.Parent do
+            TweenService:Create(icon, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Rotation = 10
+            }):Play()
+            wait(2)
+            TweenService:Create(icon, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Rotation = -10
+            }):Play()
+            wait(2)
+            TweenService:Create(icon, TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+                Rotation = 0
+            }):Play()
+            wait(1)
+        end
+    end)()
+    
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -40, 1, 0)
+    title.Position = UDim2.new(0, 40, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "AURORA UI"
+    title.TextColor3 = self.Config.Theme.Text
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 22
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = titleContainer
+    
+    -- Title glow animation
+    coroutine.wrap(function()
+        while title and title.Parent do
+            TweenService:Create(title, TweenInfo.Smooth, {
+                TextColor3 = self.Config.Theme.LightAccent
+            }):Play()
+            wait(1.5)
+            TweenService:Create(title, TweenInfo.Smooth, {
+                TextColor3 = self.Config.Theme.Text
+            }):Play()
+            wait(1.5)
+        end
+    end)()
+    
+    -- Control Buttons
+    local controls = Instance.new("Frame")
+    controls.Name = "Controls"
+    controls.Size = UDim2.new(0, 80, 1, 0)
+    controls.Position = UDim2.new(1, -90, 0, 0)
+    controls.BackgroundTransparency = 1
+    controls.Parent = topBar
+    
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = controls
+    
+    -- Minimize Button
+    local minimizeBtn = self:CreateControlButton("Minimize", "rbxassetid://10734996278")
+    minimizeBtn.LayoutOrder = 1
+    minimizeBtn.Parent = controls
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        self:Minimize()
+    end)
+    
+    -- Close Button
+    local closeBtn = self:CreateControlButton("Close", "rbxassetid://10734994956")
+    closeBtn.LayoutOrder = 2
+    closeBtn.Parent = controls
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        self:Toggle()
+    end)
+    
+    -- Make draggable
+    self:MakeDraggable(topBar)
+    
+    return topBar
+end
+
+function Aurora:CreateControlButton(name, icon)
+    local button = Instance.new("ImageButton")
+    button.Name = name
+    button.Size = UDim2.new(0, 35, 0, 35)
+    button.BackgroundColor3 = self.Config.Theme.Secondary
+    button.Image = icon
+    button.ImageColor3 = self.Config.Theme.Text
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    -- Hover animation
+    button.MouseEnter:Connect(function()
+        if name == "Close" then
+            TweenService:Create(button, TweenInfo.Elastic, {
+                BackgroundColor3 = self.Config.Theme.Error,
+                ImageColor3 = Color3.new(1, 1, 1),
+                Rotation = 180,
+                Size = UDim2.new(0, 40, 0, 40)
+            }):Play()
+        else
+            TweenService:Create(button, TweenInfo.Elastic, {
+                BackgroundColor3 = self.Config.Theme.LightAccent,
+                ImageColor3 = Color3.new(1, 1, 1),
+                Rotation = 90,
+                Size = UDim2.new(0, 40, 0, 40)
+            }):Play()
+        end
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.Smooth, {
+            BackgroundColor3 = self.Config.Theme.Secondary,
+            ImageColor3 = self.Config.Theme.Text,
+            Rotation = 0,
+            Size = UDim2.new(0, 35, 0, 35)
+        }):Play()
+    end)
+    
+    return button
+end
+
+function Aurora:CreateTabContainer()
+    local container = Instance.new("Frame")
+    container.Name = "TabContainer"
+    container.Size = UDim2.new(1, -40, 0, 50)
+    container.Position = UDim2.new(0, 20, 0, 70)
+    container.BackgroundTransparency = 1
+    
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 10)
+    layout.Parent = container
+    
+    return container
+end
+
+function Aurora:CreateContentFrame()
+    local content = Instance.new("Frame")
+    content.Name = "Content"
+    content.Size = UDim2.new(1, -40, 1, -140)
+    content.Position = UDim2.new(0, 20, 0, 130)
+    content.BackgroundTransparency = 1
+    content.ClipsDescendants = true
+    
+    return content
+end
+
+function Aurora:MakeDraggable(frame)
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.MainWindow.Position
+            
+            -- Scale down slightly when dragging
+            TweenService:Create(self.MainWindow, TweenInfo.Quick, {
+                Size = UDim2.new(0, 490, self.MainWindow.Size.Y.Scale, self.MainWindow.Size.Y.Offset - 10)
+            }):Play()
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
+                        Size = UDim2.new(0, 500, self.MainWindow.Size.Y.Scale, self.MainWindow.Size.Y.Offset + 10)
+                    }):Play()
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            self.MainWindow.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+function Aurora:CreateTab(name, icon)
+    local tab = {
+        Name = name,
+        Content = Instance.new("ScrollingFrame")
+    }
+    
+    -- Tab Button with enhanced animations
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = name .. "Tab"
+    tabButton.Size = UDim2.new(0, 110, 1, 0)
+    tabButton.BackgroundColor3 = self.Config.Theme.Secondary
+    tabButton.Text = name
+    tabButton.TextColor3 = self.Config.Theme.TextSecondary
+    tabButton.Font = Enum.Font.GothamSemibold
+    tabButton.TextSize = 14
+    tabButton.AutoButtonColor = false
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = tabButton
+    
+    -- Hover gradient
+    local hoverGradient = Instance.new("UIGradient")
+    hoverGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+    })
+    hoverGradient.Parent = tabButton
+    
+    -- Tab Content with entry animations
+    tab.Content.Size = UDim2.new(1, 0, 1, 0)
+    tab.Content.BackgroundTransparency = 1
+    tab.Content.BorderSizePixel = 0
+    tab.Content.ScrollBarThickness = 4
+    tab.Content.ScrollBarImageColor3 = self.Config.Theme.Accent
+    tab.Content.Visible = false
+    tab.Content.Parent = self.ContentFrame
+    
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = tab.Content
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 12)
+    
+    local padding = Instance.new("UIPadding")
+    padding.Parent = tab.Content
+    padding.PaddingLeft = UDim.new(0, 8)
+    padding.PaddingTop = UDim.new(0, 8)
+    
+    -- Click Event with enhanced animation
+    tabButton.MouseButton1Click:Connect(function()
+        self:SwitchTab(tab)
+    end)
+    
+    -- Enhanced Hover Effects
+    tabButton.MouseEnter:Connect(function()
+        if not tab.Active then
+            TweenService:Create(tabButton, TweenInfo.Elastic, {
+                BackgroundColor3 = self.Config.Theme.LightAccent,
+                TextColor3 = self.Config.Theme.Text,
+                Size = UDim2.new(0, 115, 1, 0)
+            }):Play()
+            
+            hoverGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, self.Config.Theme.LightAccent),
+                ColorSequenceKeypoint.new(1, self.Config.Theme.Accent)
+            })
+        end
+    end)
+    
+    tabButton.MouseLeave:Connect(function()
+        if not tab.Active then
+            TweenService:Create(tabButton, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Secondary,
+                TextColor3 = self.Config.Theme.TextSecondary,
+                Size = UDim2.new(0, 110, 1, 0)
+            }):Play()
+            
+            hoverGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+                ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+            })
+        end
+    end)
+    
+    tabButton.Parent = self.TabContainer
+    tab.Button = tabButton
+    
+    table.insert(self.Elements, tab)
+    
+    if #self.Elements == 1 then
+        self:SwitchTab(tab)
+    end
+    
+    return tab
+end
+
+function Aurora:SwitchTab(tab)
+    for _, existingTab in pairs(self.Elements) do
+        existingTab.Content.Visible = false
+        if existingTab.Button then
+            TweenService:Create(existingTab.Button, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Secondary,
+                TextColor3 = self.Config.Theme.TextSecondary,
+                Size = UDim2.new(0, 110, 1, 0)
+            }):Play()
+        end
+        existingTab.Active = false
+    end
+    
+    tab.Active = true
+    tab.Content.Visible = true
+    
+    -- Enhanced tab activation animation
+    TweenService:Create(tab.Button, TweenInfo.Elastic, {
+        BackgroundColor3 = self.Config.Theme.Accent,
+        TextColor3 = self.Config.Theme.Text,
+        Size = UDim2.new(0, 120, 1, 0)
+    }):Play()
+    
+    -- Animate content entry
+    for i, child in ipairs(tab.Content:GetChildren()) do
+        if child:IsA("Frame") then
+            child.Position = UDim2.new(1, 0, child.Position.Y.Scale, child.Position.Y.Offset)
+            TweenService:Create(child, TweenInfo.Back, {
+                Position = UDim2.new(0, 0, child.Position.Y.Scale, child.Position.Y.Offset)
+            }):Play()
+            wait(0.05) -- Staggered animation
+        end
+    end
+end
+
+function Aurora:CreateButton(options)
+    local button = Instance.new("TextButton")
+    button.Name = "Button"
+    button.Size = UDim2.new(1, -10, 0, 50)
+    button.BackgroundColor3 = self.Config.Theme.Secondary
+    button.Text = options.text or "Button"
+    button.TextColor3 = self.Config.Theme.Text
+    button.Font = Enum.Font.GothamSemibold
+    button.TextSize = 14
+    button.AutoButtonColor = false
+    button.Parent = options.parent.Content
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = button
+    
+    -- Multi-layer gradient
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+    })
+    gradient.Rotation = 45
+    gradient.Parent = button
+    
+    -- Ripple effect
+    local ripple = Instance.new("Frame")
+    ripple.Name = "Ripple"
+    ripple.Size = UDim2.new(0, 0, 0, 0)
+    ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ripple.BackgroundColor3 = Color3.new(1, 1, 1)
+    ripple.BackgroundTransparency = 0.8
+    ripple.BorderSizePixel = 0
+    ripple.Parent = button
+    
+    local rippleCorner = Instance.new("UICorner")
+    rippleCorner.CornerRadius = UDim.new(1, 0)
+    rippleCorner.Parent = ripple
+    
+    -- Enhanced Hover Effects
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.Elastic, {
+            BackgroundColor3 = self.Config.Theme.LightAccent,
+            Size = UDim2.new(1, -5, 0, 55)
+        }):Play()
+        
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, self.Config.Theme.LightAccent),
+            ColorSequenceKeypoint.new(1, self.Config.Theme.Accent)
+        })
+        
+        -- Button shake effect
+        TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Rotation = 2
+        }):Play()
+        wait(0.1)
+        TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Rotation = -2
+        }):Play()
+        wait(0.1)
+        TweenService:Create(button, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Rotation = 0
+        }):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.Smooth, {
+            BackgroundColor3 = self.Config.Theme.Secondary,
+            Size = UDim2.new(1, -10, 0, 50)
+        }):Play()
+        
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+            ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+        })
+    end)
+    
+    -- Enhanced Click Animation
+    if options.callback then
+        button.MouseButton1Click:Connect(function()
+            -- Ripple effect
+            ripple.Size = UDim2.new(0, 0, 0, 0)
+            ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+            ripple.BackgroundTransparency = 0.8
+            
+            TweenService:Create(ripple, TweenInfo.Smooth, {
+                Size = UDim2.new(1, 0, 1, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+                BackgroundTransparency = 1
+            }):Play()
+            
+            -- Button press animation
+            TweenService:Create(button, TweenInfo.Quick, {
+                BackgroundColor3 = self.Config.Theme.Accent,
+                TextColor3 = Color3.new(1, 1, 1),
+                Size = UDim2.new(1, -15, 0, 45)
+            }):Play()
+            
+            wait(0.1)
+            
+            TweenService:Create(button, TweenInfo.Elastic, {
+                BackgroundColor3 = self.Config.Theme.LightAccent,
+                TextColor3 = self.Config.Theme.Text,
+                Size = UDim2.new(1, -10, 0, 50)
+            }):Play()
+            
+            -- Bounce effect
+            TweenService:Create(button, TweenInfo.Bounce, {
+                Position = UDim2.new(0, 5, button.Position.Y.Scale, button.Position.Y.Offset - 5)
+            }):Play()
+            wait(0.2)
+            TweenService:Create(button, TweenInfo.Bounce, {
+                Position = UDim2.new(0, 0, button.Position.Y.Scale, button.Position.Y.Offset + 5)
+            }):Play()
+            
+            options.callback()
+        end)
+    end
+    
+    return button
+end
+
+function Aurora:CreateToggle(options)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Name = "Toggle"
+    toggleFrame.Size = UDim2.new(1, -10, 0, 50)
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Parent = options.parent.Content
+    
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = options.text or "Toggle"
+    label.TextColor3 = self.Config.Theme.Text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = toggleFrame
+    
+    local toggleContainer = Instance.new("Frame")
+    toggleContainer.Name = "ToggleContainer"
+    toggleContainer.Size = UDim2.new(0, 60, 0, 30)
+    toggleContainer.Position = UDim2.new(1, -60, 0.5, -15)
+    toggleContainer.BackgroundColor3 = self.Config.Theme.Secondary
+    toggleContainer.Parent = toggleFrame
+    
+    local containerCorner = Instance.new("UICorner")
+    containerCorner.CornerRadius = UDim.new(1, 0)
+    containerCorner.Parent = toggleContainer
+    
+    -- Animated background
+    local toggleGradient = Instance.new("UIGradient")
+    toggleGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+    })
+    toggleGradient.Parent = toggleContainer
+    
+    local toggleDot = Instance.new("Frame")
+    toggleDot.Name = "ToggleDot"
+    toggleDot.Size = UDim2.new(0, 22, 0, 22)
+    toggleDot.Position = UDim2.new(0, 4, 0.5, -11)
+    toggleDot.BackgroundColor3 = self.Config.Theme.Text
+    toggleDot.Parent = toggleContainer
+    
+    local dotCorner = Instance.new("UICorner")
+    dotCorner.CornerRadius = UDim.new(1, 0)
+    dotCorner.Parent = toggleDot
+    
+    -- Dot glow
+    local dotGlow = Instance.new("ImageLabel")
+    dotGlow.Name = "DotGlow"
+    dotGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
+    dotGlow.Position = UDim2.new(-0.25, 0, -0.25, 0)
+    dotGlow.BackgroundTransparency = 1
+    dotGlow.Image = "rbxassetid://8992230675"
+    dotGlow.ImageColor3 = self.Config.Theme.Accent
+    dotGlow.ImageTransparency = 1
+    dotGlow.Parent = toggleDot
+    
+    local state = options.default or false
+    
+    local function updateToggle()
+        if state then
+            -- ON state with multiple animations
+            TweenService:Create(toggleContainer, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Accent
+            }):Play()
+            
+            TweenService:Create(toggleDot, TweenInfo.Elastic, {
+                Position = UDim2.new(0, 34, 0.5, -11)
+            }):Play()
+            
+            TweenService:Create(dotGlow, TweenInfo.Smooth, {
+                ImageTransparency = 0.7
+            }):Play()
+            
+            toggleGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, self.Config.Theme.Accent),
+                ColorSequenceKeypoint.new(1, self.Config.Theme.LightAccent)
+            })
+            
+            -- Bounce effect
+            TweenService:Create(toggleDot, TweenInfo.Bounce, {
+                Size = UDim2.new(0, 18, 0, 18)
+            }):Play()
+            wait(0.1)
+            TweenService:Create(toggleDot, TweenInfo.Bounce, {
+                Size = UDim2.new(0, 22, 0, 22)
+            }):Play()
+        else
+            -- OFF state
+            TweenService:Create(toggleContainer, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Secondary
+            }):Play()
+            
+            TweenService:Create(toggleDot, TweenInfo.Elastic, {
+                Position = UDim2.new(0, 4, 0.5, -11)
+            }):Play()
+            
+            TweenService:Create(dotGlow, TweenInfo.Smooth, {
+                ImageTransparency = 1
+            }):Play()
+            
+            toggleGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, self.Config.Theme.Secondary),
+                ColorSequenceKeypoint.new(1, self.Config.Theme.Secondary)
+            })
+        end
+    end
+    
+    updateToggle()
+    
+    -- Enhanced toggle interaction
+    local function toggleState()
+        state = not state
+        updateToggle()
+        if options.callback then
+            options.callback(state)
+        end
+    end
+    
+    toggleContainer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            -- Scale down on click
+            TweenService:Create(toggleContainer, TweenInfo.Quick, {
+                Size = UDim2.new(0, 55, 0, 25)
+            }):Play()
+        end
+    end)
+    
+    toggleContainer.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            TweenService:Create(toggleContainer, TweenInfo.Elastic, {
+                Size = UDim2.new(0, 60, 0, 30)
+            }):Play()
+            toggleState()
+        end
+    end)
+    
+    return toggleFrame
+end
 
 function Aurora:CreateSlider(options)
     local sliderFrame = Instance.new("Frame")
     sliderFrame.Name = "Slider"
-    sliderFrame.Size = UDim2.new(1, -10, 0, 70)
+    sliderFrame.Size = UDim2.new(1, -10, 0, 80)
     sliderFrame.BackgroundTransparency = 1
     sliderFrame.Parent = options.parent.Content
     
     local topFrame = Instance.new("Frame")
     topFrame.Name = "TopFrame"
-    topFrame.Size = UDim2.new(1, 0, 0, 20)
+    topFrame.Size = UDim2.new(1, 0, 0, 25)
     topFrame.BackgroundTransparency = 1
     topFrame.Parent = sliderFrame
     
@@ -95,19 +935,19 @@ function Aurora:CreateSlider(options)
     
     local sliderContainer = Instance.new("Frame")
     sliderContainer.Name = "SliderContainer"
-    sliderContainer.Size = UDim2.new(1, 0, 0, 30)
-    sliderContainer.Position = UDim2.new(0, 0, 0, 25)
+    sliderContainer.Size = UDim2.new(1, 0, 0, 35)
+    sliderContainer.Position = UDim2.new(0, 0, 0, 30)
     sliderContainer.BackgroundColor3 = self.Config.Theme.Secondary
     sliderContainer.Parent = sliderFrame
     
     local containerCorner = Instance.new("UICorner")
-    containerCorner.CornerRadius = UDim.new(0, 8)
+    containerCorner.CornerRadius = UDim.new(0, 10)
     containerCorner.Parent = sliderContainer
     
     local track = Instance.new("Frame")
     track.Name = "Track"
-    track.Size = UDim2.new(1, -20, 0, 6)
-    track.Position = UDim2.new(0, 10, 0.5, -3)
+    track.Size = UDim2.new(1, -20, 0, 8)
+    track.Position = UDim2.new(0, 10, 0.5, -4)
     track.BackgroundColor3 = self.Config.Theme.Secondary
     track.BorderSizePixel = 0
     track.Parent = sliderContainer
@@ -127,6 +967,14 @@ function Aurora:CreateSlider(options)
     fillCorner.CornerRadius = UDim.new(1, 0)
     fillCorner.Parent = fill
     
+    -- Fill gradient
+    local fillGradient = Instance.new("UIGradient")
+    fillGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Accent),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.LightAccent)
+    })
+    fillGradient.Parent = fill
+    
     local thumb = Instance.new("TextButton")
     thumb.Name = "Thumb"
     thumb.Size = UDim2.new(0, 20, 0, 20)
@@ -141,6 +989,7 @@ function Aurora:CreateSlider(options)
     thumbCorner.CornerRadius = UDim.new(1, 0)
     thumbCorner.Parent = thumb
     
+    -- Thumb glow with animation
     local thumbGlow = Instance.new("ImageLabel")
     thumbGlow.Name = "Glow"
     thumbGlow.Size = UDim2.new(1.4, 0, 1.4, 0)
@@ -148,8 +997,22 @@ function Aurora:CreateSlider(options)
     thumbGlow.BackgroundTransparency = 1
     thumbGlow.Image = "rbxassetid://8992230675"
     thumbGlow.ImageColor3 = self.Config.Theme.Accent
-    thumbGlow.ImageTransparency = 0.8
+    thumbGlow.ImageTransparency = 0.9
     thumbGlow.Parent = thumb
+    
+    -- Pulsing glow animation
+    coroutine.wrap(function()
+        while thumbGlow and thumbGlow.Parent do
+            TweenService:Create(thumbGlow, TweenInfo.Smooth, {
+                ImageTransparency = 0.7
+            }):Play()
+            wait(1)
+            TweenService:Create(thumbGlow, TweenInfo.Smooth, {
+                ImageTransparency = 0.9
+            }):Play()
+            wait(1)
+        end
+    end)()
     
     local min = options.min or 0
     local max = options.max or 100
@@ -193,8 +1056,12 @@ function Aurora:CreateSlider(options)
     
     thumb.MouseButton1Down:Connect(function()
         dragging = true
-        TweenService:Create(thumb, TweenInfo.Smooth, {
+        TweenService:Create(thumb, TweenInfo.Elastic, {
             Size = UDim2.new(0, 24, 0, 24)
+        }):Play()
+        
+        TweenService:Create(thumbGlow, TweenInfo.Smooth, {
+            ImageTransparency = 0.5
         }):Play()
     end)
     
@@ -208,8 +1075,12 @@ function Aurora:CreateSlider(options)
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
-            TweenService:Create(thumb, TweenInfo.Smooth, {
+            TweenService:Create(thumb, TweenInfo.Elastic, {
                 Size = UDim2.new(0, 20, 0, 20)
+            }):Play()
+            
+            TweenService:Create(thumbGlow, TweenInfo.Smooth, {
+                ImageTransparency = 0.9
             }):Play()
         end
     end)
@@ -226,14 +1097,14 @@ end
 function Aurora:CreateDropdown(options)
     local dropdownFrame = Instance.new("Frame")
     dropdownFrame.Name = "Dropdown"
-    dropdownFrame.Size = UDim2.new(1, -10, 0, 45)
+    dropdownFrame.Size = UDim2.new(1, -10, 0, 50)
     dropdownFrame.BackgroundTransparency = 1
     dropdownFrame.ClipsDescendants = true
     dropdownFrame.Parent = options.parent.Content
     
     local mainButton = Instance.new("TextButton")
     mainButton.Name = "MainButton"
-    mainButton.Size = UDim2.new(1, 0, 0, 45)
+    mainButton.Size = UDim2.new(1, 0, 0, 50)
     mainButton.BackgroundColor3 = self.Config.Theme.Secondary
     mainButton.Text = options.text or "Select Option"
     mainButton.TextColor3 = self.Config.Theme.Text
@@ -248,7 +1119,7 @@ function Aurora:CreateDropdown(options)
     buttonPadding.Parent = mainButton
     
     local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 10)
+    buttonCorner.CornerRadius = UDim.new(0, 12)
     buttonCorner.Parent = mainButton
     
     local arrow = Instance.new("ImageLabel")
@@ -256,14 +1127,14 @@ function Aurora:CreateDropdown(options)
     arrow.Size = UDim2.new(0, 20, 0, 20)
     arrow.Position = UDim2.new(1, -30, 0.5, -10)
     arrow.BackgroundTransparency = 1
-    arrow.Image = "rbxassetid://10734996278" -- Down arrow
+    arrow.Image = "rbxassetid://10734996278"
     arrow.ImageColor3 = self.Config.Theme.Text
     arrow.Parent = mainButton
     
     local optionsFrame = Instance.new("ScrollingFrame")
     optionsFrame.Name = "Options"
     optionsFrame.Size = UDim2.new(1, 0, 0, 0)
-    optionsFrame.Position = UDim2.new(0, 0, 0, 50)
+    optionsFrame.Position = UDim2.new(0, 0, 0, 55)
     optionsFrame.BackgroundColor3 = self.Config.Theme.Secondary
     optionsFrame.BorderSizePixel = 0
     optionsFrame.ScrollBarThickness = 4
@@ -272,7 +1143,7 @@ function Aurora:CreateDropdown(options)
     optionsFrame.Parent = dropdownFrame
     
     local optionsCorner = Instance.new("UICorner")
-    optionsCorner.CornerRadius = UDim.new(0, 10)
+    optionsCorner.CornerRadius = UDim.new(0, 12)
     optionsCorner.Parent = optionsFrame
     
     local optionsLayout = Instance.new("UIListLayout")
@@ -292,42 +1163,74 @@ function Aurora:CreateDropdown(options)
         
         if isOpen then
             local optionCount = #options.options
-            local maxHeight = math.min(optionCount * 40, 200)
+            local maxHeight = math.min(optionCount * 45, 200)
             
             optionsFrame.Visible = true
-            TweenService:Create(optionsFrame, TweenInfo.Smooth, {
+            TweenService:Create(optionsFrame, TweenInfo.Elastic, {
                 Size = UDim2.new(1, 0, 0, maxHeight)
             }):Play()
             
-            TweenService:Create(arrow, TweenInfo.Smooth, {
+            TweenService:Create(arrow, TweenInfo.Elastic, {
                 Rotation = 180
             }):Play()
             
-            dropdownFrame.Size = UDim2.new(1, -10, 0, 45 + maxHeight)
+            TweenService:Create(dropdownFrame, TweenInfo.Elastic, {
+                Size = UDim2.new(1, -10, 0, 50 + maxHeight)
+            }):Play()
+            
+            -- Animate options in
+            for i, option in ipairs(optionsFrame:GetChildren()) do
+                if option:IsA("TextButton") then
+                    option.Position = UDim2.new(1, 0, option.Position.Y.Scale, option.Position.Y.Offset)
+                    TweenService:Create(option, TweenInfo.Back, {
+                        Position = UDim2.new(0, 0, option.Position.Y.Scale, option.Position.Y.Offset)
+                    }):Play()
+                    wait(0.03)
+                end
+            end
         else
             TweenService:Create(optionsFrame, TweenInfo.Smooth, {
                 Size = UDim2.new(1, 0, 0, 0)
             }):Play()
             
-            TweenService:Create(arrow, TweenInfo.Smooth, {
+            TweenService:Create(arrow, TweenInfo.Elastic, {
                 Rotation = 0
             }):Play()
             
-            dropdownFrame.Size = UDim2.new(1, -10, 0, 45)
+            TweenService:Create(dropdownFrame, TweenInfo.Smooth, {
+                Size = UDim2.new(1, -10, 0, 50)
+            }):Play()
             
             task.wait(0.3)
             optionsFrame.Visible = false
         end
     end
     
+    -- Enhanced hover effects for main button
+    mainButton.MouseEnter:Connect(function()
+        TweenService:Create(mainButton, TweenInfo.Elastic, {
+            BackgroundColor3 = self.Config.Theme.LightAccent,
+            Size = UDim2.new(1, -5, 0, 55)
+        }):Play()
+    end)
+    
+    mainButton.MouseLeave:Connect(function()
+        if not isOpen then
+            TweenService:Create(mainButton, TweenInfo.Smooth, {
+                BackgroundColor3 = self.Config.Theme.Secondary,
+                Size = UDim2.new(1, 0, 0, 50)
+            }):Play()
+        end
+    end)
+    
     mainButton.MouseButton1Click:Connect(toggleDropdown)
     
-    -- Create option buttons
+    -- Create option buttons with enhanced animations
     for i, option in ipairs(options.options or {}) do
         local optionButton = Instance.new("TextButton")
         optionButton.Name = option
-        optionButton.Size = UDim2.new(1, -10, 0, 35)
-        optionButton.Position = UDim2.new(0, 5, 0, (i-1) * 40)
+        optionButton.Size = UDim2.new(1, -10, 0, 40)
+        optionButton.Position = UDim2.new(0, 5, 0, (i-1) * 45)
         optionButton.BackgroundColor3 = self.Config.Theme.Secondary
         optionButton.Text = option
         optionButton.TextColor3 = self.Config.Theme.TextSecondary
@@ -341,9 +1244,22 @@ function Aurora:CreateDropdown(options)
         optionPadding.PaddingLeft = UDim.new(0, 15)
         optionPadding.Parent = optionButton
         
+        local optionCorner = Instance.new("UICorner")
+        optionCorner.CornerRadius = UDim.new(0, 8)
+        optionCorner.Parent = optionButton
+        
         optionButton.MouseButton1Click:Connect(function()
             selectedOption = option
             mainButton.Text = option
+            
+            -- Selection animation
+            TweenService:Create(optionButton, TweenInfo.Elastic, {
+                BackgroundColor3 = self.Config.Theme.Accent,
+                TextColor3 = Color3.new(1, 1, 1),
+                Size = UDim2.new(1, -5, 0, 45)
+            }):Play()
+            
+            wait(0.2)
             toggleDropdown()
             
             if options.callback then
@@ -352,17 +1268,21 @@ function Aurora:CreateDropdown(options)
         end)
         
         optionButton.MouseEnter:Connect(function()
-            TweenService:Create(optionButton, TweenInfo.Smooth, {
+            TweenService:Create(optionButton, TweenInfo.Elastic, {
                 BackgroundColor3 = self.Config.Theme.LightAccent,
-                TextColor3 = self.Config.Theme.Text
+                TextColor3 = self.Config.Theme.Text,
+                Size = UDim2.new(1, -5, 0, 45)
             }):Play()
         end)
         
         optionButton.MouseLeave:Connect(function()
-            TweenService:Create(optionButton, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Secondary,
-                TextColor3 = self.Config.Theme.TextSecondary
-            }):Play()
+            if selectedOption ~= option then
+                TweenService:Create(optionButton, TweenInfo.Smooth, {
+                    BackgroundColor3 = self.Config.Theme.Secondary,
+                    TextColor3 = self.Config.Theme.TextSecondary,
+                    Size = UDim2.new(1, -10, 0, 40)
+                }):Play()
+            end
         end)
     end
     
@@ -374,389 +1294,241 @@ function Aurora:CreateDropdown(options)
     return dropdownFrame
 end
 
-function Aurora:CreateInput(options)
-    local inputFrame = Instance.new("Frame")
-    inputFrame.Name = "Input"
-    inputFrame.Size = UDim2.new(1, -10, 0, 60)
-    inputFrame.BackgroundTransparency = 1
-    inputFrame.Parent = options.parent.Content
+function Aurora:CreateSection(options)
+    local section = Instance.new("Frame")
+    section.Name = "Section"
+    section.Size = UDim2.new(1, -10, 0, 60)
+    section.BackgroundTransparency = 1
+    section.Parent = options.parent.Content
     
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = options.text or "Input"
-    label.TextColor3 = self.Config.Theme.Text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = inputFrame
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, 0, 0.5, 0)
+    title.BackgroundTransparency = 1
+    title.Text = options.text or "Section"
+    title.TextColor3 = self.Config.Theme.Text
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 18
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = section
     
-    local textBoxContainer = Instance.new("Frame")
-    textBoxContainer.Name = "TextBoxContainer"
-    textBoxContainer.Size = UDim2.new(1, 0, 0, 35)
-    textBoxContainer.Position = UDim2.new(0, 0, 0, 25)
-    textBoxContainer.BackgroundColor3 = self.Config.Theme.Secondary
-    textBoxContainer.Parent = inputFrame
-    
-    local containerCorner = Instance.new("UICorner")
-    containerCorner.CornerRadius = UDim.new(0, 8)
-    containerCorner.Parent = textBoxContainer
-    
-    local textBox = Instance.new("TextBox")
-    textBox.Name = "TextBox"
-    textBox.Size = UDim2.new(1, -20, 1, 0)
-    textBox.Position = UDim2.new(0, 10, 0, 0)
-    textBox.BackgroundTransparency = 1
-    textBox.Text = options.default or ""
-    textBox.PlaceholderText = options.placeholder or "Type here..."
-    textBox.TextColor3 = self.Config.Theme.Text
-    textBox.PlaceholderColor3 = self.Config.Theme.TextSecondary
-    textBox.Font = Enum.Font.Gotham
-    textBox.TextSize = 14
-    textBox.TextXAlignment = Enum.TextXAlignment.Left
-    textBox.ClearTextOnFocus = false
-    textBox.Parent = textBoxContainer
-    
-    local underline = Instance.new("Frame")
-    underline.Name = "Underline"
-    underline.Size = UDim2.new(0, 0, 0, 2)
-    underline.Position = UDim2.new(0, 10, 1, -2)
-    underline.BackgroundColor3 = self.Config.Theme.Accent
-    underline.BorderSizePixel = 0
-    underline.Parent = textBoxContainer
-    
-    local underlineCorner = Instance.new("UICorner")
-    underlineCorner.CornerRadius = UDim.new(1, 0)
-    underlineCorner.Parent = underline
-    
-    -- Focus effects
-    textBox.Focused:Connect(function()
-        TweenService:Create(underline, TweenInfo.Smooth, {
-            Size = UDim2.new(1, -20, 0, 2)
-        }):Play()
-        
-        TweenService:Create(textBoxContainer, TweenInfo.Smooth, {
-            BackgroundColor3 = self.Config.Theme.LightAccent
-        }):Play()
-    end)
-    
-    textBox.FocusLost:Connect(function()
-        TweenService:Create(underline, TweenInfo.Smooth, {
-            Size = UDim2.new(0, 0, 0, 2)
-        }):Play()
-        
-        TweenService:Create(textBoxContainer, TweenInfo.Smooth, {
-            BackgroundColor3 = self.Config.Theme.Secondary
-        }):Play()
-        
-        if options.callback then
-            options.callback(textBox.Text)
-        end
-    end)
-    
-    return inputFrame
-end
-
-function Aurora:CreateKeybind(options)
-    local keybindFrame = Instance.new("Frame")
-    keybindFrame.Name = "Keybind"
-    keybindFrame.Size = UDim2.new(1, -10, 0, 50)
-    keybindFrame.BackgroundTransparency = 1
-    keybindFrame.Parent = options.parent.Content
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = options.text or "Keybind"
-    label.TextColor3 = self.Config.Theme.Text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = keybindFrame
-    
-    local keyButton = Instance.new("TextButton")
-    keyButton.Name = "KeyButton"
-    keyButton.Size = UDim2.new(0, 80, 0, 35)
-    keyButton.Position = UDim2.new(1, -80, 0.5, -17.5)
-    keyButton.BackgroundColor3 = self.Config.Theme.Secondary
-    keyButton.Text = options.default and options.default.Name or "None"
-    keyButton.TextColor3 = self.Config.Theme.Text
-    keyButton.Font = Enum.Font.GothamSemibold
-    keyButton.TextSize = 12
-    keyButton.AutoButtonColor = false
-    keyButton.Parent = keybindFrame
-    
-    local keyCorner = Instance.new("UICorner")
-    keyCorner.CornerRadius = UDim.new(0, 8)
-    keyCorner.Parent = keyButton
-    
-    local listening = false
-    
-    local function setKey(key)
-        keyButton.Text = key.Name
-        listening = false
-        
-        TweenService:Create(keyButton, TweenInfo.Smooth, {
-            BackgroundColor3 = self.Config.Theme.Secondary,
-            TextColor3 = self.Config.Theme.Text
-        }):Play()
-        
-        if options.callback then
-            options.callback(key)
-        end
-    end
-    
-    keyButton.MouseButton1Click:Connect(function()
-        if not listening then
-            listening = true
-            keyButton.Text = "..."
-            
-            TweenService:Create(keyButton, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Accent,
-                TextColor3 = Color3.new(1, 1, 1)
+    -- Title animation
+    coroutine.wrap(function()
+        while title and title.Parent do
+            TweenService:Create(title, TweenInfo.Smooth, {
+                TextColor3 = self.Config.Theme.LightAccent
             }):Play()
+            wait(2)
+            TweenService:Create(title, TweenInfo.Smooth, {
+                TextColor3 = self.Config.Theme.Text
+            }):Play()
+            wait(2)
         end
-    end)
-    
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not listening or gameProcessed then return end
-        
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            setKey(input.KeyCode)
-        elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
-            setKey(Enum.KeyCode.MouseButton1)
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-            setKey(Enum.KeyCode.MouseButton2)
-        end
-    end)
-    
-    return keybindFrame
-end
-
-function Aurora:CreateColorPicker(options)
-    local colorFrame = Instance.new("Frame")
-    colorFrame.Name = "ColorPicker"
-    colorFrame.Size = UDim2.new(1, -10, 0, 80)
-    colorFrame.BackgroundTransparency = 1
-    colorFrame.Parent = options.parent.Content
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.Text = options.text or "Color Picker"
-    label.TextColor3 = self.Config.Theme.Text
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = colorFrame
-    
-    local previewButton = Instance.new("TextButton")
-    previewButton.Name = "Preview"
-    previewButton.Size = UDim2.new(0, 50, 0, 50)
-    previewButton.Position = UDim2.new(0, 0, 0, 25)
-    previewButton.BackgroundColor3 = options.default or self.Config.Theme.Accent
-    previewButton.Text = ""
-    previewButton.AutoButtonColor = false
-    previewButton.Parent = colorFrame
-    
-    local previewCorner = Instance.new("UICorner")
-    previewCorner.CornerRadius = UDim.new(0, 8)
-    previewCorner.Parent = previewButton
-    
-    local previewGlow = Instance.new("ImageLabel")
-    previewGlow.Name = "Glow"
-    previewGlow.Size = UDim2.new(1.2, 0, 1.2, 0)
-    previewGlow.Position = UDim2.new(-0.1, 0, -0.1, 0)
-    previewGlow.BackgroundTransparency = 1
-    previewGlow.Image = "rbxassetid://8992230675"
-    previewGlow.ImageColor3 = previewButton.BackgroundColor3
-    previewGlow.ImageTransparency = 0.7
-    previewGlow.Parent = previewButton
-    
-    local hexLabel = Instance.new("TextLabel")
-    hexLabel.Name = "HexLabel"
-    hexLabel.Size = UDim2.new(1, -60, 0, 20)
-    hexLabel.Position = UDim2.new(0, 60, 0, 35)
-    hexLabel.BackgroundTransparency = 1
-    hexLabel.Text = "#" .. self:RGBToHex(previewButton.BackgroundColor3)
-    hexLabel.TextColor3 = self.Config.Theme.TextSecondary
-    hexLabel.Font = Enum.Font.GothamMono
-    hexLabel.TextSize = 12
-    hexLabel.TextXAlignment = Enum.TextXAlignment.Left
-    hexLabel.Parent = colorFrame
-    
-    local currentColor = options.default or self.Config.Theme.Accent
-    
-    previewButton.MouseButton1Click:Connect(function()
-        -- In a real implementation, you'd open a color picker dialog
-        -- For now, we'll just cycle through some colors
-        local colors = {
-            self.Config.Theme.Accent,
-            self.Config.Theme.Success,
-            self.Config.Theme.Warning,
-            self.Config.Theme.Error,
-            Color3.fromRGB(255, 105, 180), -- Pink
-            Color3.fromRGB(0, 191, 255)   -- Deep Sky Blue
-        }
-        
-        local currentIndex = 1
-        for i, color in ipairs(colors) do
-            if color == currentColor then
-                currentIndex = i
-                break
-            end
-        end
-        
-        local nextIndex = (currentIndex % #colors) + 1
-        currentColor = colors[nextIndex]
-        
-        TweenService:Create(previewButton, TweenInfo.Smooth, {
-            BackgroundColor3 = currentColor
-        }):Play()
-        
-        TweenService:Create(previewGlow, TweenInfo.Smooth, {
-            ImageColor3 = currentColor
-        }):Play()
-        
-        hexLabel.Text = "#" .. self:RGBToHex(currentColor)
-        
-        if options.callback then
-            options.callback(currentColor)
-        end
-    end)
-    
-    return colorFrame
-end
-
-function Aurora:RGBToHex(color)
-    return string.format("%02X%02X%02X", 
-        math.floor(color.R * 255), 
-        math.floor(color.G * 255), 
-        math.floor(color.B * 255)
-    )
-end
-
-function Aurora:CreateLabel(options)
-    local labelFrame = Instance.new("Frame")
-    labelFrame.Name = "Label"
-    labelFrame.Size = UDim2.new(1, -10, 0, 30)
-    labelFrame.BackgroundTransparency = 1
-    labelFrame.Parent = options.parent.Content
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "TextLabel"
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = options.text or "Label"
-    label.TextColor3 = options.color or self.Config.Theme.Text
-    label.Font = options.bold and Enum.Font.GothamBold or Enum.Font.Gotham
-    label.TextSize = options.size or 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Center
-    label.Parent = labelFrame
-    
-    return labelFrame
-end
-
-function Aurora:CreateDivider(options)
-    local dividerFrame = Instance.new("Frame")
-    dividerFrame.Name = "Divider"
-    dividerFrame.Size = UDim2.new(1, -10, 0, 20)
-    dividerFrame.BackgroundTransparency = 1
-    dividerFrame.Parent = options.parent.Content
+    end)()
     
     local line = Instance.new("Frame")
     line.Name = "Line"
-    line.Size = UDim2.new(1, 0, 0, 1)
-    line.Position = UDim2.new(0, 0, 0.5, 0)
-    line.BackgroundColor3 = self.Config.Theme.Secondary
+    line.Size = UDim2.new(0, 0, 0, 2)
+    line.Position = UDim2.new(0, 0, 1, -2)
+    line.BackgroundColor3 = self.Config.Theme.Accent
     line.BorderSizePixel = 0
-    line.Parent = dividerFrame
+    line.Parent = section
     
-    return dividerFrame
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, self.Config.Theme.Accent),
+        ColorSequenceKeypoint.new(1, self.Config.Theme.LightAccent)
+    })
+    gradient.Parent = line
+    
+    -- Animate line growth
+    TweenService:Create(line, TweenInfo.Elastic, {
+        Size = UDim2.new(1, 0, 0, 2)
+    }):Play()
+    
+    return section
+end
+
+function Aurora:Minimize()
+    self.Minimized = not self.Minimized
+    
+    if self.Minimized then
+        -- Minimize with bounce effect
+        TweenService:Create(self.MainWindow, TweenInfo.Bounce, {
+            Size = UDim2.new(0, 500, 0, 60)
+        }):Play()
+        
+        -- Hide content with fade
+        self.TabContainer.Visible = false
+        self.ContentFrame.Visible = false
+    else
+        -- Restore with elastic effect
+        TweenService:Create(self.MainWindow, TweenInfo.Elastic, {
+            Size = UDim2.new(0, 500, 0, 550)
+        }):Play()
+        
+        -- Show content
+        self.TabContainer.Visible = true
+        self.ContentFrame.Visible = true
+    end
+end
+
+function Aurora:Toggle()
+    self.Visible = not self.Visible
+    
+    if self.Visible then
+        -- Reset minimized state when opening
+        self.Minimized = false
+        self.TabContainer.Visible = true
+        self.ContentFrame.Visible = true
+        
+        -- Show with epic animation sequence
+        self.MainWindow.Visible = true
+        self.OpenButton.Visible = false
+        
+        -- Scale from center
+        self.MainWindow.Size = UDim2.new(0, 0, 0, 0)
+        self.MainWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        
+        TweenService:Create(self.MainWindow, TweenInfo.Elastic, {
+            Size = UDim2.new(0, 500, 0, 550),
+            Position = UDim2.new(0.5, -250, 0.5, -275)
+        }):Play()
+        
+        -- Rotate slightly for dramatic effect
+        TweenService:Create(self.MainWindow, TweenInfo.Back, {
+            Rotation = 5
+        }):Play()
+        wait(0.1)
+        TweenService:Create(self.MainWindow, TweenInfo.Back, {
+            Rotation = -5
+        }):Play()
+        wait(0.1)
+        TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
+            Rotation = 0
+        }):Play()
+        
+    else
+        -- Hide with smooth animation
+        TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Rotation = 10
+        }):Play()
+        
+        task.wait(0.3)
+        self.MainWindow.Visible = false
+        self.OpenButton.Visible = true
+        
+        -- Reset rotation
+        self.MainWindow.Rotation = 0
+    end
+end
+
+function Aurora:SetupInput()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == self.Config.ToggleKey then
+            self:Toggle()
+        end
+    end)
 end
 
 function Aurora:CreateNotify(options)
     local notify = Instance.new("Frame")
     notify.Name = "Notify"
-    notify.Size = UDim2.new(0, 300, 0, 80)
-    notify.Position = UDim2.new(1, -320, 1, -100)
+    notify.Size = UDim2.new(0, 320, 0, 80)
+    notify.Position = UDim2.new(1, 400, 1, -100)
     notify.BackgroundColor3 = self.Config.Theme.Secondary
     notify.BorderSizePixel = 0
     notify.Parent = self.ScreenGui
     
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 15)
     corner.Parent = notify
     
-    local glow = Instance.new("ImageLabel")
-    glow.Name = "Glow"
-    glow.Size = UDim2.new(1, 20, 1, 20)
-    glow.Position = UDim2.new(0, -10, 0, -10)
-    glow.BackgroundTransparency = 1
-    glow.Image = "rbxassetid://8992230675"
-    glow.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
-                     or options.type == "warning" and self.Config.Theme.Warning 
-                     or options.type == "error" and self.Config.Theme.Error 
-                     or self.Config.Theme.Accent
-    glow.ImageTransparency = 0.8
-    glow.ScaleType = Enum.ScaleType.Slice
-    glow.SliceCenter = Rect.new(23, 23, 277, 277)
-    glow.Parent = notify
-    glow.ZIndex = -1
+    -- Multi-layer glow
+    for i = 1, 2 do
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow" .. i
+        glow.Size = UDim2.new(1, 20 + (i * 5), 1, 20 + (i * 5))
+        glow.Position = UDim2.new(0, -10 - (i * 2.5), 0, -10 - (i * 2.5))
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://8992230675"
+        glow.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
+                         or options.type == "warning" and self.Config.Theme.Warning 
+                         or options.type == "error" and self.Config.Theme.Error 
+                         or self.Config.Theme.Accent
+        glow.ImageTransparency = 0.9 - (i * 0.1)
+        glow.ScaleType = Enum.ScaleType.Slice
+        glow.SliceCenter = Rect.new(23, 23, 277, 277)
+        glow.Parent = notify
+        glow.ZIndex = -1
+    end
     
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
-    icon.Size = UDim2.new(0, 20, 0, 20)
-    icon.Position = UDim2.new(0, 15, 0, 15)
+    icon.Size = UDim2.new(0, 24, 0, 24)
+    icon.Position = UDim2.new(0, 20, 0, 20)
     icon.BackgroundTransparency = 1
     icon.Image = options.type == "success" and "rbxassetid://10734994956" 
                or options.type == "warning" and "rbxassetid://10734996278" 
                or options.type == "error" and "rbxassetid://10734994956" 
                or "rbxassetid://10734996820"
-    icon.ImageColor3 = glow.ImageColor3
+    icon.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
+                     or options.type == "warning" and self.Config.Theme.Warning 
+                     or options.type == "error" and self.Config.Theme.Error 
+                     or self.Config.Theme.Accent
     icon.Parent = notify
+    
+    -- Icon animation
+    TweenService:Create(icon, TweenInfo.Elastic, {
+        Rotation = 360,
+        Size = UDim2.new(0, 28, 0, 28)
+    }):Play()
+    wait(0.3)
+    TweenService:Create(icon, TweenInfo.Smooth, {
+        Rotation = 0,
+        Size = UDim2.new(0, 24, 0, 24)
+    }):Play()
     
     local title = Instance.new("TextLabel")
     title.Name = "Title"
-    title.Size = UDim2.new(1, -50, 0, 20)
-    title.Position = UDim2.new(0, 45, 0, 15)
+    title.Size = UDim2.new(1, -60, 0, 24)
+    title.Position = UDim2.new(0, 60, 0, 18)
     title.BackgroundTransparency = 1
     title.Text = options.title or "Notification"
     title.TextColor3 = self.Config.Theme.Text
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 14
+    title.TextSize = 16
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = notify
     
     local description = Instance.new("TextLabel")
     description.Name = "Description"
-    description.Size = UDim2.new(1, -20, 1, -40)
-    description.Position = UDim2.new(0, 15, 0, 40)
+    description.Size = UDim2.new(1, -40, 1, -50)
+    description.Position = UDim2.new(0, 20, 0, 50)
     description.BackgroundTransparency = 1
     description.Text = options.description or options.text or "This is a notification"
     description.TextColor3 = self.Config.Theme.TextSecondary
     description.Font = Enum.Font.Gotham
-    description.TextSize = 12
+    description.TextSize = 13
     description.TextXAlignment = Enum.TextXAlignment.Left
     description.TextYAlignment = Enum.TextYAlignment.Top
     description.TextWrapped = true
     description.Parent = notify
     
-    -- Slide in animation
-    notify.Position = UDim2.new(1, 300, 1, -100)
+    -- Slide in animation with bounce
     TweenService:Create(notify, TweenInfo.Elastic, {
-        Position = UDim2.new(1, -320, 1, -100)
+        Position = UDim2.new(1, -340, 1, -100)
     }):Play()
     
-    -- Auto-remove after 5 seconds
+    -- Auto-remove after 5 seconds with slide out
     task.delay(5, function()
         if notify and notify.Parent then
             TweenService:Create(notify, TweenInfo.Smooth, {
-                Position = UDim2.new(1, 300, 1, -100)
+                Position = UDim2.new(1, 400, 1, -100)
             }):Play()
             
             task.wait(0.3)
@@ -767,6 +1539,6 @@ function Aurora:CreateNotify(options)
     return notify
 end
 
--- [Previous minimize, toggle, and other functions remain the same...]
+-- Additional components (Input, Keybind, ColorPicker, Label, Divider) would follow similar patterns...
 
 return Aurora

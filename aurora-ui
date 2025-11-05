@@ -145,7 +145,7 @@ function Aurora:CreateWatermark()
     fps.BackgroundTransparency = 1
     fps.Text = "60 FPS"
     fps.TextColor3 = self.Config.Theme.Success
-    fps.Font = Enum.Font.GothamMono
+    fps.Font = Enum.Font.Code
     fps.TextSize = 11
     fps.TextXAlignment = Enum.TextXAlignment.Right
     fps.Parent = content
@@ -1704,7 +1704,7 @@ function Aurora:CreateColorPicker(options)
     hexLabel.BackgroundTransparency = 1
     hexLabel.Text = "#" .. self:RGBToHex(previewButton.BackgroundColor3)
     hexLabel.TextColor3 = self.Config.Theme.TextSecondary
-    hexLabel.Font = Enum.Font.GothamMono
+    hexLabel.Font = Enum.Font.Code
     hexLabel.TextSize = 12
     hexLabel.TextXAlignment = Enum.TextXAlignment.Left
     hexLabel.Parent = colorFrame
@@ -1719,7 +1719,7 @@ function Aurora:CreateColorPicker(options)
         math.floor(previewButton.BackgroundColor3.G * 255),
         math.floor(previewButton.BackgroundColor3.B * 255))
     rgbLabel.TextColor3 = self.Config.Theme.TextSecondary
-    rgbLabel.Font = Enum.Font.Gotham
+    rgbLabel.Font = Enum.Font.Gotham  -- Changed from GothamMono
     rgbLabel.TextSize = 11
     rgbLabel.TextXAlignment = Enum.TextXAlignment.Left
     rgbLabel.Parent = colorFrame

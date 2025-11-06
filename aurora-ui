@@ -265,11 +265,12 @@ function Aurora:CreateMainWindow()
     corner.CornerRadius = UDim.new(0, 20)
     corner.Parent = self.MainWindow
     
+    -- Background Pattern
     if self.Config.BackgroundPattern ~= "None" then
         self:CreateBackgroundPattern(self.MainWindow)
     end
     
-       -- Animated background particles
+    -- Animated background particles
     if self.Config.WindowEffects.Particles then
         self:CreateParticleEffect(self.MainWindow)
     end
@@ -580,14 +581,14 @@ function Aurora:CreateTopBar()
     gameName.TextXAlignment = Enum.TextXAlignment.Left
     gameName.Parent = titleFrame
     
-            -- Control Buttons
+    -- Control Buttons
     local controls = Instance.new("Frame")
     controls.Name = "Controls"
-    controls.Size = UDim2.new(0, 180, 1, 0) -- Increased width for 3 buttons
-    controls.Position = UDim2.new(1, -190, 0, 0)
+    controls.Size = UDim2.new(0, 120, 1, 0)
+    controls.Position = UDim2.new(1, -130, 0, 0)
     controls.BackgroundTransparency = 1
     controls.Parent = self.TopBar
-
+    
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Horizontal
     layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
@@ -595,7 +596,7 @@ function Aurora:CreateTopBar()
     layout.Padding = UDim.new(0, 12)
     layout.Parent = controls
     
-    -- Minimize Button (LEFT)
+    -- Minimize Button
     local minimizeBtn = self:CreateControlButton("Minimize", "rbxassetid://10734996278")
     minimizeBtn.LayoutOrder = 1
     minimizeBtn.Parent = controls
@@ -604,22 +605,13 @@ function Aurora:CreateTopBar()
         self:Minimize()
     end)
     
-    -- Close Button (MIDDLE) - Toggles visibility
+    -- Close Button
     local closeBtn = self:CreateControlButton("Close", "rbxassetid://10734994956")
     closeBtn.LayoutOrder = 2
     closeBtn.Parent = controls
     
     closeBtn.MouseButton1Click:Connect(function()
         self:Toggle()
-    end)
-    
-    -- Destroy Button (RIGHT/X) - Destroys everything
-    local destroyBtn = self:CreateControlButton("Destroy", "rbxassetid://10734994956") 
-    destroyBtn.LayoutOrder = 3
-    destroyBtn.Parent = controls
-    
-    destroyBtn.MouseButton1Click:Connect(function()
-        self:Destroy()
     end)
     
     -- Make draggable
@@ -648,15 +640,6 @@ function Aurora:CreateControlButton(name, icon)
                     BackgroundColor3 = self.Config.Theme.Error,
                     ImageColor3 = Color3.new(1, 1, 1),
                     Rotation = 180,
-                    Size = UDim2.new(0, 50, 0, 50)
-                }):Play()
-            end)
-        elseif name == "Destroy" then
-            pcall(function()
-                TweenService:Create(button, TweenInfo.Elastic, {
-                    BackgroundColor3 = self.Config.Theme.Error,
-                    ImageColor3 = Color3.new(1, 1, 1),
-                    Rotation = 90,
                     Size = UDim2.new(0, 50, 0, 50)
                 }):Play()
             end)
@@ -1929,6 +1912,149 @@ function Aurora:CreateSection(options)
     return section
 end
 
+-- ENHANCED NOTIFICATION SYSTEM
+function Aurora:CreateNotify(options)
+    local notify = Instance.new("Frame")
+    notify.Name = "Notify"
+    notify.Size = UDim2.new(0, 350, 0, 90)
+    notify.Position = UDim2.new(1, 400, 1, -110)
+    notify.BackgroundColor3 = self.Config.Theme.Secondary
+    notify.BorderSizePixel = 0
+    notify.Parent = self.ScreenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 16)
+    corner.Parent = notify
+    
+    -- Multi-layer glow
+    for i = 1, 2 do
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow" .. i
+        glow.Size = UDim2.new(1, 20 + (i * 5), 1, 20 + (i * 5))
+        glow.Position = UDim2.new(0, -10 - (i * 2.5), 0, -10 - (i * 2.5))
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://8992230675"
+        glow.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
+                         or options.type == "warning" and self.Config.Theme.Warning 
+                         or options.type == "error" and self.Config.Theme.Error 
+                         or options.type == "info" and self.Config.Theme.Info
+                         or self.Config.Theme.Accent
+        glow.ImageTransparency = 0.9 - (i * 0.1)
+        glow.ScaleType = Enum.ScaleType.Slice
+        glow.SliceCenter = Rect.new(23, 23, 277, 277)
+        glow.Parent = notify
+        glow.ZIndex = -1
+    end
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Size = UDim2.new(0, 28, 0, 28)
+    icon.Position = UDim2.new(0, 20, 0, 20)
+    icon.BackgroundTransparency = 1
+    icon.Image = options.type == "success" and "rbxassetid://10734994956" 
+               or options.type == "warning" and "rbxassetid://10734996278" 
+               or options.type == "error" and "rbxassetid://10734994956" 
+               or options.type == "info" and "rbxassetid://10734996820"
+               or "rbxassetid://10734996820"
+    icon.ImageColor3 = options.type == "success" and self.Config.Theme.Success 
+                     or options.type == "warning" and self.Config.Theme.Warning 
+                     or options.type == "error" and self.Config.Theme.Error 
+                     or options.type == "info" and self.Config.Theme.Info
+                     or self.Config.Theme.Accent
+    icon.Parent = notify
+    
+    -- Icon animation
+    pcall(function()
+        TweenService:Create(icon, TweenInfo.Elastic, {
+            Rotation = 360,
+            Size = UDim2.new(0, 32, 0, 32)
+        }):Play()
+        wait(0.3)
+        TweenService:Create(icon, TweenInfo.Smooth, {
+            Rotation = 0,
+            Size = UDim2.new(0, 28, 0, 28)
+        }):Play()
+    end)
+    
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -70, 0, 24)
+    title.Position = UDim2.new(0, 65, 0, 18)
+    title.BackgroundTransparency = 1
+    title.Text = options.title or 
+                (options.type == "success" and "Success" or
+                 options.type == "warning" and "Warning" or
+                 options.type == "error" and "Error" or
+                 options.type == "info" and "Information" or
+                 "Notification")
+    title.TextColor3 = self.Config.Theme.Text
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = notify
+    
+    local description = Instance.new("TextLabel")
+    description.Name = "Description"
+    description.Size = UDim2.new(1, -40, 1, -50)
+    description.Position = UDim2.new(0, 20, 0, 50)
+    description.BackgroundTransparency = 1
+    description.Text = options.description or options.text or "This is a notification"
+    description.TextColor3 = self.Config.Theme.TextSecondary
+    description.Font = Enum.Font.Gotham
+    description.TextSize = 13
+    description.TextXAlignment = Enum.TextXAlignment.Left
+    description.TextYAlignment = Enum.TextYAlignment.Top
+    description.TextWrapped = true
+    description.Parent = notify
+    
+    -- Progress bar for auto-close
+    local progressBar = Instance.new("Frame")
+    progressBar.Name = "ProgressBar"
+    progressBar.Size = UDim2.new(1, 0, 0, 3)
+    progressBar.Position = UDim2.new(0, 0, 1, 0)
+    progressBar.BackgroundColor3 = options.type == "success" and self.Config.Theme.Success 
+                                 or options.type == "warning" and self.Config.Theme.Warning 
+                                 or options.type == "error" and self.Config.Theme.Error 
+                                 or options.type == "info" and self.Config.Theme.Info
+                                 or self.Config.Theme.Accent
+    progressBar.BorderSizePixel = 0
+    progressBar.Parent = notify
+    
+    local progressCorner = Instance.new("UICorner")
+    progressCorner.CornerRadius = UDim.new(0, 2)
+    progressCorner.Parent = progressBar
+    
+    -- Slide in animation with bounce
+    pcall(function()
+        TweenService:Create(notify, TweenInfo.Elastic, {
+            Position = UDim2.new(1, -370, 1, -110)
+        }):Play()
+    end)
+    
+    -- Progress bar animation
+    pcall(function()
+        TweenService:Create(progressBar, TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 0, 0, 3)
+        }):Play()
+    end)
+    
+    -- Auto-remove after 5 seconds with slide out
+    task.delay(5, function()
+        if notify and notify.Parent then
+            pcall(function()
+                TweenService:Create(notify, TweenInfo.Smooth, {
+                    Position = UDim2.new(1, 400, 1, -110)
+                }):Play()
+            end)
+            
+            task.wait(0.3)
+            pcall(function() notify:Destroy() end)
+        end
+    end)
+    
+    return notify
+end
+
 -- WINDOW MANAGEMENT
 function Aurora:Minimize()
     self.Minimized = not self.Minimized
@@ -2010,248 +2136,6 @@ function Aurora:SetupInput()
             self:Toggle()
         end
     end)
-end
-
--- DESTROY METHODS
-function Aurora:Destroy()
-    -- Create confirmation dialog
-    local confirmFrame = Instance.new("Frame")
-    confirmFrame.Name = "DestroyConfirmation"
-    confirmFrame.Size = UDim2.new(0, 400, 0, 200)
-    confirmFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
-    confirmFrame.BackgroundColor3 = self.Config.Theme.Main
-    confirmFrame.BorderSizePixel = 0
-    confirmFrame.ZIndex = 100
-    confirmFrame.Parent = self.ScreenGui
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 20)
-    corner.Parent = confirmFrame
-    
-    -- Glow effect
-    local glow = Instance.new("ImageLabel")
-    glow.Name = "Glow"
-    glow.Size = UDim2.new(1, 40, 1, 40)
-    glow.Position = UDim2.new(0, -20, 0, -20)
-    glow.BackgroundTransparency = 1
-    glow.Image = "rbxassetid://8992230675"
-    glow.ImageColor3 = self.Config.Theme.Error
-    glow.ImageTransparency = 0.8
-    glow.ScaleType = Enum.ScaleType.Slice
-    glow.SliceCenter = Rect.new(23, 23, 277, 277)
-    glow.Parent = confirmFrame
-    glow.ZIndex = -1
-    
-    -- Title
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, -40, 0, 50)
-    title.Position = UDim2.new(0, 20, 0, 20)
-    title.BackgroundTransparency = 1
-    title.Text = "Destroy " .. self.Config.Name
-    title.TextColor3 = self.Config.Theme.Error
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 22
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = confirmFrame
-    
-    -- Warning icon
-    local warningIcon = Instance.new("ImageLabel")
-    warningIcon.Name = "WarningIcon"
-    warningIcon.Size = UDim2.new(0, 30, 0, 30)
-    warningIcon.Position = UDim2.new(1, -50, 0, 30)
-    warningIcon.BackgroundTransparency = 1
-    warningIcon.Image = "rbxassetid://10734996278"
-    warningIcon.ImageColor3 = self.Config.Theme.Warning
-    warningIcon.Parent = confirmFrame
-    
-    -- Message
-    local message = Instance.new("TextLabel")
-    message.Name = "Message"
-    message.Size = UDim2.new(1, -40, 0, 60)
-    message.Position = UDim2.new(0, 20, 0, 70)
-    message.BackgroundTransparency = 1
-    message.Text = "This will completely destroy the Aurora UI interface. All settings and data will be lost. This action cannot be undone."
-    message.TextColor3 = self.Config.Theme.Text
-    message.Font = Enum.Font.Gotham
-    message.TextSize = 14
-    message.TextWrapped = true
-    message.TextXAlignment = Enum.TextXAlignment.Left
-    message.TextYAlignment = Enum.TextYAlignment.Top
-    message.Parent = confirmFrame
-    
-    -- Button container
-    local buttonContainer = Instance.new("Frame")
-    buttonContainer.Name = "ButtonContainer"
-    buttonContainer.Size = UDim2.new(1, -40, 0, 50)
-    buttonContainer.Position = UDim2.new(0, 20, 1, -70)
-    buttonContainer.BackgroundTransparency = 1
-    buttonContainer.Parent = confirmFrame
-    
-    -- Cancel button (left) - "No"
-    local cancelBtn = Instance.new("TextButton")
-    cancelBtn.Name = "CancelButton"
-    cancelBtn.Size = UDim2.new(0, 120, 1, 0)
-    cancelBtn.Position = UDim2.new(0, 0, 0, 0)
-    cancelBtn.BackgroundColor3 = self.Config.Theme.Secondary
-    cancelBtn.Text = "NO"
-    cancelBtn.TextColor3 = self.Config.Theme.Text
-    cancelBtn.Font = Enum.Font.GothamBold
-    cancelBtn.TextSize = 14
-    cancelBtn.AutoButtonColor = false
-    cancelBtn.Parent = buttonContainer
-    
-    local cancelCorner = Instance.new("UICorner")
-    cancelCorner.CornerRadius = UDim.new(0, 10)
-    cancelCorner.Parent = cancelBtn
-    
-    -- Destroy button (right) - "Yes"
-    local destroyConfirmBtn = Instance.new("TextButton")
-    destroyConfirmBtn.Name = "DestroyButton"
-    destroyConfirmBtn.Size = UDim2.new(0, 120, 1, 0)
-    destroyConfirmBtn.Position = UDim2.new(1, -120, 0, 0)
-    destroyConfirmBtn.BackgroundColor3 = self.Config.Theme.Error
-    destroyConfirmBtn.Text = "YES"
-    destroyConfirmBtn.TextColor3 = Color3.new(1, 1, 1)
-    destroyConfirmBtn.Font = Enum.Font.GothamBold
-    destroyConfirmBtn.TextSize = 14
-    destroyConfirmBtn.AutoButtonColor = false
-    destroyConfirmBtn.Parent = buttonContainer
-    
-    local destroyCorner = Instance.new("UICorner")
-    destroyCorner.CornerRadius = UDim.new(0, 10)
-    destroyCorner.Parent = destroyConfirmBtn
-    
-    -- Button animations
-    cancelBtn.MouseEnter:Connect(function()
-        pcall(function()
-            TweenService:Create(cancelBtn, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.LightAccent
-            }):Play()
-        end)
-    end)
-    
-    cancelBtn.MouseLeave:Connect(function()
-        pcall(function()
-            TweenService:Create(cancelBtn, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Secondary
-            }):Play()
-        end)
-    end)
-    
-    destroyConfirmBtn.MouseEnter:Connect(function()
-        pcall(function()
-            TweenService:Create(destroyConfirmBtn, TweenInfo.Smooth, {
-                BackgroundColor3 = Color3.fromRGB(200, 60, 40),
-                Size = UDim2.new(0, 125, 1, 0)
-            }):Play()
-        end)
-    end)
-    
-    destroyConfirmBtn.MouseLeave:Connect(function()
-        pcall(function()
-            TweenService:Create(destroyConfirmBtn, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Error,
-                Size = UDim2.new(0, 120, 1, 0)
-            }):Play()
-        end)
-    end)
-    
-    -- Button functionality
-    cancelBtn.MouseButton1Click:Connect(function()
-        pcall(function()
-            TweenService:Create(confirmFrame, TweenInfo.Smooth, {
-                Size = UDim2.new(0, 0, 0, 0),
-                Position = UDim2.new(0.5, 0, 0.5, 0)
-            }):Play()
-        end)
-        task.wait(0.3)
-        pcall(function() confirmFrame:Destroy() end)
-    end)
-    
-    destroyConfirmBtn.MouseButton1Click:Connect(function()
-        -- Destroy animation sequence
-        pcall(function()
-            TweenService:Create(confirmFrame, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Error,
-                Size = UDim2.new(0, 450, 0, 220)
-            }):Play()
-        end)
-        
-        pcall(function()
-            TweenService:Create(destroyConfirmBtn, TweenInfo.Smooth, {
-                BackgroundColor3 = Color3.new(1, 1, 1),
-                TextColor3 = self.Config.Theme.Error
-            }):Play()
-        end)
-        
-        wait(0.5)
-        
-        -- Actually destroy everything
-        self:ActuallyDestroy()
-    end)
-    
-    -- Animate in
-    confirmFrame.Size = UDim2.new(0, 0, 0, 0)
-    confirmFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-    
-    pcall(function()
-        TweenService:Create(confirmFrame, TweenInfo.Elastic, {
-            Size = UDim2.new(0, 400, 0, 200),
-            Position = UDim2.new(0.5, -200, 0.5, -100)
-        }):Play()
-    end)
-end
-
-function Aurora:ActuallyDestroy()
-    -- Play destruction animation on main window
-    if self.MainWindow then
-        pcall(function()
-            TweenService:Create(self.MainWindow, TweenInfo.Smooth, {
-                Rotation = 45,
-                BackgroundColor3 = self.Config.Theme.Error,
-                Size = UDim2.new(0, 0, 0, 0),
-                Position = UDim2.new(0.5, 0, 0.5, 0)
-            }):Play()
-        end)
-    end
-    
-    -- Destroy open button with animation
-    if self.OpenButton then
-        pcall(function()
-            TweenService:Create(self.OpenButton, TweenInfo.Smooth, {
-                Rotation = 180,
-                BackgroundColor3 = self.Config.Theme.Error,
-                Size = UDim2.new(0, 0, 0, 0),
-                Position = UDim2.new(0.5, 0, 0.5, 0)
-            }):Play()
-        end)
-    end
-    
-    -- Destroy watermark with animation
-    local watermark = self.ScreenGui:FindFirstChild("Watermark")
-    if watermark then
-        pcall(function()
-            TweenService:Create(watermark, TweenInfo.Smooth, {
-                BackgroundColor3 = self.Config.Theme.Error,
-                Size = UDim2.new(0, 0, 0, 40),
-                Position = UDim2.new(1, -105, 0, 10)
-            }):Play()
-        end)
-    end
-    
-    wait(1)
-    
-    -- Actually remove everything
-    if self.ScreenGui then
-        self.ScreenGui:Destroy()
-    end
-    
-    -- Clear references
-    self.ScreenGui = nil
-    self.MainWindow = nil
-    self.OpenButton = nil
-    self.Tabs = {}
 end
 
 return Aurora

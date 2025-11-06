@@ -597,7 +597,7 @@ function Aurora:CreateTopBar()
     layout.Parent = controls
     
     -- Minimize Button
-    local minimizeBtn = self:CreateControlButton("Minimize", "rbxassetid://10734996278")
+    local minimizeBtn = self:CreateControlButton("Minimize", "rbxassetid://139862486005008")
     minimizeBtn.LayoutOrder = 1
     minimizeBtn.Parent = controls
     
